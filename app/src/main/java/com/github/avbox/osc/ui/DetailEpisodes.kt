@@ -4,6 +4,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,9 +31,13 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -77,7 +85,6 @@ internal fun EpisodeRow(
             .fillMaxWidth()
             .padding(top = 16.dp)
     ) {
-        val batchMode by vm.batchDownloadMode.collectAsState()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,7 +158,6 @@ internal fun EpisodeRow(
                                     episode = episodeMeta?.getOrNull(index),
                                     selected = index == playIndex,
                                     onClick = { vm.onEpisodeClick(index) },
-                                    showDownload = batchMode || state != null,
                                     onDownloadClick = { vm.onDownloadClick(index) },
                                     downloadState = state,
                                     modifier = Modifier.fillMaxWidth(),
@@ -161,7 +167,6 @@ internal fun EpisodeRow(
                                     name = ep.name ?: (index + 1).toString(),
                                     selected = index == playIndex,
                                     onClick = { vm.onEpisodeClick(index) },
-                                    showDownload = batchMode || state != null,
                                     onDownloadClick = { vm.onDownloadClick(index) },
                                     downloadState = state,
                                     modifier = Modifier.fillMaxWidth(),
@@ -209,7 +214,6 @@ private fun EpisodeCard(
     episode: TmdbEpisode?,
     selected: Boolean,
     onClick: () -> Unit,
-    showDownload: Boolean = false,
     onDownloadClick: (() -> Unit)? = null,
     downloadState: Int? = null,
     modifier: Modifier = Modifier,
@@ -255,7 +259,7 @@ private fun EpisodeCard(
                     .background(Color.Black.copy(alpha = 0.55f))
                     .padding(horizontal = 7.dp, vertical = 1.dp),
             )
-            if (showDownload && onDownloadClick != null) {
+            if (downloadState != null && onDownloadClick != null) {
                 DownloadBadge(
                     state = downloadState,
                     onClick = onDownloadClick,
@@ -283,7 +287,6 @@ private fun EpisodeNameCard(
     name: String,
     selected: Boolean,
     onClick: () -> Unit,
-    showDownload: Boolean = false,
     onDownloadClick: (() -> Unit)? = null,
     downloadState: Int? = null,
     modifier: Modifier = Modifier,
@@ -316,7 +319,7 @@ private fun EpisodeNameCard(
             softWrap = true,
             textAlign = TextAlign.Center,
         )
-        if (showDownload && onDownloadClick != null) {
+        if (downloadState != null && onDownloadClick != null) {
             DownloadBadge(
                 state = downloadState,
                 onClick = onDownloadClick,
@@ -524,6 +527,162 @@ internal fun EpisodeSheet(vm: DetailViewModel, slideFromEnd: Boolean, showQualit
                         colors = MaterialTheme.colorScheme.filterChipColors(),
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun BatchDownloadSheet(
+    vm: DetailViewModel,
+    info: VodInfo,
+    episodes: List<VodInfo.VodSeries>,
+    onDismiss: () -> Unit,
+) {
+    val selected by vm.selectedEpisodes.collectAsState()
+    val downloadStates by vm.downloadState.collectAsState()
+    val completed = episodes.map { downloadStates[it.name.orEmpty()] == 5 }
+    val selectable = episodes.indices.filter { !completed[it] }
+    ModalBottomSheet(
+        onDismissRequest = {
+            vm.clearEpisodeSelection()
+            onDismiss()
+        },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.download_batch),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = stringResource(R.string.detail_batch_selected, selected.size, episodes.size),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(episodes.size) { index ->
+                    SelectableEpisodeCard(
+                        name = episodes[index].name ?: (index + 1).toString(),
+                        selected = index in selected,
+                        completed = completed[index],
+                        onToggle = { vm.toggleEpisodeSelect(index) },
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = { vm.selectAllEpisodes(selectable) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.common_all))
+                }
+                TextButton(
+                    onClick = {
+                        vm.clearEpisodeSelection()
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+                Button(
+                    onClick = {
+                        vm.downloadSelectedEpisodes()
+                        onDismiss()
+                    },
+                    enabled = selected.isNotEmpty(),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.weight(2f),
+                ) {
+                    Text(
+                        text = stringResource(R.string.download_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectableEpisodeCard(
+    name: String,
+    selected: Boolean,
+    completed: Boolean,
+    onToggle: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .detailGlass(RoundedCornerShape(16.dp))
+            .then(
+                if (selected) {
+                    Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                } else {
+                    Modifier
+                },
+            )
+            .clickable(enabled = !completed, onClick = onToggle)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (completed) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else if (selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(20.dp)
+                .clip(CircleShape)
+                .then(
+                    if (selected) {
+                        Modifier.background(MaterialTheme.colorScheme.primary)
+                    } else {
+                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
+                    },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected || completed) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_download_done),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(14.dp),
+                )
             }
         }
     }

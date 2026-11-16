@@ -73,6 +73,7 @@ internal fun DetailContent(
     val description = remember(info.des) { removeHtmlTag(info.des) }
     var followScheduleOpen by rememberSaveable { mutableStateOf(false) }
     var showSourceSheet by remember { mutableStateOf(false) }
+    var showBatchSheet by rememberSaveable { mutableStateOf(false) }
 
     val currentSource = ApiConfig.get().getSource(vm.firstsourceKey)
     val displaySourceName = currentSource?.name ?: vm.firstsourceKey
@@ -102,6 +103,7 @@ internal fun DetailContent(
                 onMusic = { activity.openMusicPlayer() },
                 onCast = { activity.openCast() },
                 onCollect = { vm.toggleCollect() },
+                onOpenBatchDownload = { showBatchSheet = true },
                 onFollow = { followScheduleOpen = true },
                 vm = vm,
                 rollPaused = heroRollPaused,
@@ -181,6 +183,15 @@ internal fun DetailContent(
         item(key = "tmdb_genres") {
             TmdbGenreSection(vm, info.name, info.en, info.year)
         }
+    }
+
+    if (showBatchSheet) {
+        BatchDownloadSheet(
+            vm = vm,
+            info = info,
+            episodes = info.seriesMap?.get(info.playFlag).orEmpty(),
+            onDismiss = { showBatchSheet = false },
+        )
     }
 
     if (showSourceSheet) {

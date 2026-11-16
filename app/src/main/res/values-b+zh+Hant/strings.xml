@@ -682,4 +682,5 @@
     <string name="detail_play_count">播放 · %1$d 集</string>
     <string name="detail_menu_audio">音頻</string>
     <string name="detail_batch_done">完成</string>
+    <string name="detail_batch_selected">已選 %1$d/%2$d 集</string>
 </resources>

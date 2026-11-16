@@ -306,11 +306,28 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
     private var pendingLocal: Pair<Int, String>? = null
 
-    private val _batchDownloadMode = MutableStateFlow(false)
-    val batchDownloadMode = _batchDownloadMode.asStateFlow()
+    private val _selectedEpisodes = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedEpisodes = _selectedEpisodes.asStateFlow()
 
-    fun toggleBatchDownloadMode() {
-        _batchDownloadMode.value = !_batchDownloadMode.value
+    fun toggleEpisodeSelect(index: Int) {
+        val current = _selectedEpisodes.value
+        _selectedEpisodes.value = if (index in current) current - index else current + index
+    }
+
+    fun selectAllEpisodes(indices: List<Int>) {
+        _selectedEpisodes.value = indices.toSet()
+    }
+
+    fun clearEpisodeSelection() {
+        _selectedEpisodes.value = emptySet()
+    }
+
+    fun downloadSelectedEpisodes() {
+        val info = vodInfo ?: return
+        val positions = _selectedEpisodes.value.toList().sorted()
+        if (positions.isEmpty()) return
+        _selectedEpisodes.value = emptySet()
+        launchDownload(info, positions)
     }
 
     private val _downloadState = MutableStateFlow<Map<String, Int>>(emptyMap())
