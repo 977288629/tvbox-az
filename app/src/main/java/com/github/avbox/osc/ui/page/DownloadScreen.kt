@@ -17,6 +17,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,11 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
+import com.github.avbox.osc.ui.theme.ContinuousMenuContainer
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
 import com.github.avbox.osc.ui.components.CapsuleSegmentedButton
@@ -70,10 +76,37 @@ fun DownloadScreen(
             )
         },
         actions = {
-            TopBarActionBox(R.drawable.ic_download_pause, stringResource(R.string.download_action_pause_all), onClick = { vm.pauseAll() })
-            TopBarActionBox(R.drawable.player_ic_play, stringResource(R.string.download_action_resume_all), onClick = { vm.resumeAll() })
-            TopBarActionBox(R.drawable.ic_download_done, stringResource(R.string.download_action_clear_completed), onClick = { vm.clearCompleted() })
-            TopBarActionBox(R.drawable.ic_download_delete, stringResource(R.string.download_action_clear_all), onClick = { confirmClear = true })
+            var menuExpanded by remember { mutableStateOf(false) }
+            TopBarActionBox(R.drawable.ic_more_vert, stringResource(R.string.common_more), onClick = { menuExpanded = true })
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                shape = ContinuousMenuContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                shadowElevation = 4.dp,
+            ) {
+                DownloadMenuAction(R.drawable.ic_download_pause, stringResource(R.string.download_action_pause_all)) {
+                    menuExpanded = false
+                    vm.pauseAll()
+                }
+                DownloadMenuAction(R.drawable.player_ic_play, stringResource(R.string.download_action_resume_all)) {
+                    menuExpanded = false
+                    vm.resumeAll()
+                }
+                DownloadMenuAction(R.drawable.ic_download_done, stringResource(R.string.download_action_clear_completed)) {
+                    menuExpanded = false
+                    vm.clearCompleted()
+                }
+                DownloadMenuAction(
+                    R.drawable.ic_download_delete,
+                    stringResource(R.string.download_action_clear_all),
+                    tint = MaterialTheme.colorScheme.error,
+                    labelColor = MaterialTheme.colorScheme.error,
+                ) {
+                    menuExpanded = false
+                    confirmClear = true
+                }
+            }
         },
     ) { topPad, bottomPad ->
         Column(
@@ -163,4 +196,33 @@ fun DownloadScreen(
             },
         )
     }
+}
+
+@Composable
+private fun DownloadMenuAction(
+    iconRes: Int,
+    label: String,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    labelColor: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = labelColor,
+            )
+        },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(20.dp),
+            )
+        },
+        onClick = onClick,
+        modifier = Modifier.height(48.dp),
+    )
 }

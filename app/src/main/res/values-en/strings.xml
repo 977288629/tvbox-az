@@ -678,4 +678,5 @@
     <string name="download_group_active">Downloading %1$d/%2$d</string>
     <string name="download_group_total">%1$d episodes</string>
     <string name="download_group_failed">%1$d failed</string>
+    <string name="common_more">More</string>
 </resources>
