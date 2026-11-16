@@ -679,4 +679,5 @@
     <string name="download_group_total">%1$d episodes</string>
     <string name="download_group_failed">%1$d failed</string>
     <string name="common_more">More</string>
+    <string name="detail_play_count">Play · %1$d eps</string>
 </resources>

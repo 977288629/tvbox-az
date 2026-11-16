@@ -181,6 +181,8 @@ private val MetaSeparator = " · "
 
 private val TypeSeparators = Regex("[,，、/|;；]+")
 
+private val PopularityNoteRegex = Regex("\\d+(\\.\\d)?[万亿wW]")
+
 @Composable
 internal fun DetailTopScrim(modifier: Modifier = Modifier, alpha: Float = 1f) {
     val statusTop = with(LocalDensity.current) { WindowInsets.statusBarsIgnoringVisibility.getTop(this).toDp() }
@@ -222,6 +224,8 @@ internal fun DetailHero(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
+    val vodUi by vm.vodUi.collectAsState()
+    val episodeCount = vodUi?.info?.seriesMap?.get(vodUi?.info?.playFlag)?.size ?: 0
     val glassBackdrop = rememberLayerBackdrop(onDraw = { drawContent() })
     val circleColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = HeroCircleAlpha)
     val detail = rememberTmdbDetail(vm, title, altTitle, year)
@@ -234,7 +238,9 @@ internal fun DetailHero(
         .filter { it.isNotEmpty() }
         .joinToString(MetaSeparator)
     val metaTail = listOfNotNull(
-        note?.trim().orEmpty().takeIf { it.isNotEmpty() && !isRatingNote(it) },
+        note?.trim().orEmpty().takeIf {
+            it.isNotEmpty() && !isRatingNote(it) && !PopularityNoteRegex.matches(it)
+        },
         year.takeIf { it > 0 }?.toString(),
         area?.takeIf { it.isNotBlank() },
         types.takeIf { it.isNotEmpty() },
@@ -291,6 +297,7 @@ internal fun DetailHero(
                     descriptionText = descriptionText,
                     descriptionExpanded = descriptionExpanded,
                     onToggleDescription = { descriptionExpanded = !descriptionExpanded },
+                    episodeCount = episodeCount,
                     onPlay = onPlay,
                     followed = followed,
                     onMusic = onMusic,
@@ -381,6 +388,7 @@ internal fun DetailHero(
             descriptionText = descriptionText,
             descriptionExpanded = descriptionExpanded,
             onToggleDescription = { descriptionExpanded = !descriptionExpanded },
+            episodeCount = episodeCount,
             onPlay = onPlay,
             followed = followed,
             onMusic = onMusic,
@@ -411,12 +419,19 @@ private fun DetailHeroTopActions(
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TopBarActionBox(
-            iconRes = R.drawable.ic_arrow_left,
-            contentDescription = stringResource(R.string.common_back),
-            onClick = onBack,
-            fallbackColor = fallbackColor,
-        )
+        Box(
+            modifier = Modifier
+                .size(HeroCircleButtonSize)
+                .playerPressEffect(onTap = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_left),
+                contentDescription = stringResource(R.string.common_back),
+                tint = Color.White,
+                modifier = Modifier.size(26.dp),
+            )
+        }
         Spacer(Modifier.weight(1f))
         TopBarActionBox(
             iconRes = if (collected) R.drawable.ic_tab_collect_filled else R.drawable.ic_tab_collect,
@@ -442,6 +457,7 @@ private fun DetailHeroInfoBlock(
     descriptionText: String?,
     descriptionExpanded: Boolean,
     onToggleDescription: () -> Unit,
+    episodeCount: Int,
     onPlay: () -> Unit,
     followed: Boolean,
     onMusic: () -> Unit,
@@ -478,7 +494,7 @@ private fun DetailHeroInfoBlock(
                 .widthIn(min = HeroPlayCapsuleMinWidth)
                 .height(HeroPlayCapsuleHeight)
                 .pressScale(playInteraction, PLAYER_PRESS_SCALE),
-            shapes = PressMorphButtonShapes,
+            shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(horizontal = HeroPlayCapsuleHorizontalPadding),
             interactionSource = playInteraction,
         ) {
@@ -489,7 +505,11 @@ private fun DetailHeroInfoBlock(
                 modifier = Modifier.size(22.dp),
             )
             Text(
-                text = stringResource(R.string.common_play),
+                text = if (episodeCount > 0) {
+                    stringResource(R.string.detail_play_count, episodeCount)
+                } else {
+                    stringResource(R.string.common_play)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onPrimary,

@@ -1,20 +1,26 @@
 package com.github.avbox.osc.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
+import com.github.avbox.osc.ui.player.playerPressEffect
 import com.github.avbox.osc.api.ApiConfig
 import com.github.avbox.osc.data.FollowDays
 import com.github.avbox.osc.ui.components.FollowReminderSheet
@@ -46,6 +53,7 @@ internal fun heroScrollProgress(firstVisibleIndex: Int, firstVisibleOffset: Int,
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 internal fun DetailContent(
     activity: DetailActivity,
     vm: DetailViewModel,
@@ -64,6 +72,7 @@ internal fun DetailContent(
     val followRecord by vm.follow.collectAsState()
     val description = remember(info.des) { removeHtmlTag(info.des) }
     var followScheduleOpen by rememberSaveable { mutableStateOf(false) }
+    var showSourceSheet by remember { mutableStateOf(false) }
 
     val currentSource = ApiConfig.get().getSource(vm.firstsourceKey)
     val displaySourceName = currentSource?.name ?: vm.firstsourceKey
@@ -120,6 +129,17 @@ internal fun DetailContent(
                             modifier = Modifier.padding(start = 8.dp),
                         )
                         Spacer(Modifier.weight(1f))
+                        Box(
+                            modifier = Modifier.playerPressEffect(onTap = { showSourceSheet = true }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_detail_switch_source),
+                                contentDescription = stringResource(R.string.detail_switch_source),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
                         Text(
                             text = stringResource(R.string.detail_source, displaySourceName),
                             style = MaterialTheme.typography.labelLarge,
@@ -127,7 +147,7 @@ internal fun DetailContent(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .padding(start = 12.dp)
+                                .padding(start = 8.dp)
                                 .widthIn(max = 180.dp),
                         )
                     }
@@ -154,16 +174,22 @@ internal fun DetailContent(
             }
         }
 
-        item(key = "sources") {
-            SourceSection(vm, currentSourceName = displaySourceName)
-        }
-
         item(key = "tmdb_info") {
             TmdbCastSection(vm, info.name, info.en, info.year)
         }
 
         item(key = "tmdb_genres") {
             TmdbGenreSection(vm, info.name, info.en, info.year)
+        }
+    }
+
+    if (showSourceSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSourceSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            SourceSection(vm, currentSourceName = displaySourceName)
+            Spacer(Modifier.height(24.dp))
         }
     }
 
