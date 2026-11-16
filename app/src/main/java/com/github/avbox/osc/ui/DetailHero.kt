@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -97,6 +99,7 @@ import com.github.avbox.osc.ui.components.heroPosterSize
 import com.github.avbox.osc.ui.components.tmdbUrlOf
 import com.github.avbox.osc.ui.page.TmdbPosterStyle
 import com.github.avbox.osc.ui.theme.AppThemeState
+import com.github.avbox.osc.ui.theme.ContinuousMenuContainer
 import com.github.avbox.osc.util.TmdbImages
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -269,6 +272,10 @@ internal fun DetailHero(
                 collected = collected,
                 onBack = onBack,
                 onCollect = onCollect,
+                onBatchDownload = { vm.onBatchDownload() },
+                onMusic = onMusic,
+                onCast = onCast,
+                onFollow = onFollow,
                 fallbackColor = circleColor,
             )
             Column(
@@ -358,6 +365,10 @@ internal fun DetailHero(
                     collected = collected,
                     onBack = onBack,
                     onCollect = onCollect,
+                    onBatchDownload = { vm.onBatchDownload() },
+                    onMusic = onMusic,
+                    onCast = onCast,
+                    onFollow = onFollow,
                     fallbackColor = circleColor,
                 )
             }
@@ -410,6 +421,10 @@ private fun DetailHeroTopActions(
     collected: Boolean,
     onBack: () -> Unit,
     onCollect: () -> Unit,
+    onBatchDownload: () -> Unit,
+    onMusic: () -> Unit,
+    onCast: () -> Unit,
+    onFollow: () -> Unit,
     fallbackColor: Color,
 ) {
     Row(
@@ -419,19 +434,12 @@ private fun DetailHeroTopActions(
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(HeroCircleButtonSize)
-                .playerPressEffect(onTap = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_arrow_left),
-                contentDescription = stringResource(R.string.common_back),
-                tint = Color.White,
-                modifier = Modifier.size(26.dp),
-            )
-        }
+        TopBarActionBox(
+            iconRes = R.drawable.ic_back_chevron,
+            contentDescription = stringResource(R.string.common_back),
+            onClick = onBack,
+            fallbackColor = fallbackColor,
+        )
         Spacer(Modifier.weight(1f))
         TopBarActionBox(
             iconRes = if (collected) R.drawable.ic_tab_collect_filled else R.drawable.ic_tab_collect,
@@ -446,7 +454,67 @@ private fun DetailHeroTopActions(
                 MaterialTheme.colorScheme.onSurface
             },
         )
+        Box {
+            var menuExpanded by remember { mutableStateOf(false) }
+            TopBarActionBox(
+                iconRes = R.drawable.ic_more_vert,
+                contentDescription = stringResource(R.string.common_more),
+                onClick = { menuExpanded = true },
+                fallbackColor = fallbackColor,
+            )
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                shape = ContinuousMenuContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                shadowElevation = 4.dp,
+            ) {
+                DetailHeroMenuAction(R.drawable.ic_download, stringResource(R.string.download_batch)) {
+                    menuExpanded = false
+                    onBatchDownload()
+                }
+                DetailHeroMenuAction(R.drawable.ic_detail_music_player, stringResource(R.string.detail_menu_audio)) {
+                    menuExpanded = false
+                    onMusic()
+                }
+                DetailHeroMenuAction(R.drawable.ic_detail_cast, stringResource(R.string.common_cast)) {
+                    menuExpanded = false
+                    onCast()
+                }
+                DetailHeroMenuAction(R.drawable.ic_tab_following, stringResource(R.string.tab_following)) {
+                    menuExpanded = false
+                    onFollow()
+                }
+            }
+        }
     }
+}
+
+@Composable
+private fun DetailHeroMenuAction(
+    iconRes: Int,
+    label: String,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        },
+        onClick = onClick,
+        modifier = Modifier.height(48.dp),
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -516,70 +584,6 @@ private fun DetailHeroInfoBlock(
                 modifier = Modifier.padding(start = 6.dp),
             )
         }
-        DetailActionRow(
-            followed = followed,
-            onMusic = onMusic,
-            onCast = onCast,
-            onFollow = onFollow,
-            modifier = Modifier.padding(top = HeroButtonRowSpacing),
-        )
-    }
-}
-
-@Composable
-internal fun DetailActionRow(
-    followed: Boolean,
-    onMusic: () -> Unit,
-    onCast: () -> Unit,
-    onFollow: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(HeroCircleButtonSpacing),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        HeroCircleButton(
-            iconRes = R.drawable.ic_detail_music_player,
-            contentDescription = stringResource(R.string.detail_music_player),
-            selected = false,
-            onClick = onMusic,
-        )
-        HeroCircleButton(
-            iconRes = R.drawable.ic_detail_cast,
-            contentDescription = stringResource(R.string.common_cast),
-            selected = false,
-            onClick = onCast,
-        )
-        HeroCircleButton(
-            iconRes = R.drawable.ic_tab_following,
-            contentDescription = stringResource(R.string.tab_following),
-            selected = followed,
-            onClick = onFollow,
-        )
-    }
-}
-
-@Composable
-private fun HeroCircleButton(
-    iconRes: Int,
-    contentDescription: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(HeroCircleButtonSize)
-            .playerPressEffect(onTap = onClick)
-            .detailGlass(CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(iconRes),
-            contentDescription = contentDescription,
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(24.dp),
-        )
     }
 }
 
