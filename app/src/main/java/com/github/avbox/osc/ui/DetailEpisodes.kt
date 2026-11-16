@@ -108,13 +108,6 @@ internal fun EpisodeRow(
                 text = stringResource(R.string.common_all),
                 onClick = { vm.showEpisodeSheet() },
             )
-            Spacer(Modifier.width(2.dp))
-            PillAction(
-                iconRes = R.drawable.ic_download,
-                text = stringResource(if (batchMode) R.string.detail_batch_done else R.string.download_batch),
-                tint = if (batchMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                onClick = { vm.toggleBatchDownloadMode() },
-            )
         }
         val seasonHint = remember(info.name, currentFlag) {
             vm.seasonHintFor(info.name, currentFlag)

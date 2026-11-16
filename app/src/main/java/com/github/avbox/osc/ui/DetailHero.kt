@@ -229,6 +229,7 @@ internal fun DetailHero(
     val scope = rememberCoroutineScope()
     val vodUi by vm.vodUi.collectAsState()
     val episodeCount = vodUi?.info?.seriesMap?.get(vodUi?.info?.playFlag)?.size ?: 0
+    val batchMode by vm.batchDownloadMode.collectAsState()
     val glassBackdrop = rememberLayerBackdrop(onDraw = { drawContent() })
     val circleColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = HeroCircleAlpha)
     val detail = rememberTmdbDetail(vm, title, altTitle, year)
@@ -272,6 +273,8 @@ internal fun DetailHero(
                 collected = collected,
                 onBack = onBack,
                 onCollect = onCollect,
+                batchMode = batchMode,
+                onToggleBatchDownload = { vm.toggleBatchDownloadMode() },
                 onMusic = onMusic,
                 onCast = onCast,
                 onFollow = onFollow,
@@ -364,6 +367,8 @@ internal fun DetailHero(
                     collected = collected,
                     onBack = onBack,
                     onCollect = onCollect,
+                    batchMode = batchMode,
+                    onToggleBatchDownload = { vm.toggleBatchDownloadMode() },
                         onMusic = onMusic,
                     onCast = onCast,
                     onFollow = onFollow,
@@ -419,6 +424,8 @@ private fun DetailHeroTopActions(
     collected: Boolean,
     onBack: () -> Unit,
     onCollect: () -> Unit,
+    batchMode: Boolean,
+    onToggleBatchDownload: () -> Unit,
     onMusic: () -> Unit,
     onCast: () -> Unit,
     onFollow: () -> Unit,
@@ -466,6 +473,13 @@ private fun DetailHeroTopActions(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 shadowElevation = 4.dp,
             ) {
+                DetailHeroMenuAction(
+                    R.drawable.ic_download,
+                    stringResource(if (batchMode) R.string.detail_batch_done else R.string.download_batch),
+                ) {
+                    menuExpanded = false
+                    onToggleBatchDownload()
+                }
                 DetailHeroMenuAction(R.drawable.ic_detail_music_player, stringResource(R.string.detail_menu_audio)) {
                     menuExpanded = false
                     onMusic()
