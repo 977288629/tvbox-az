@@ -158,8 +158,6 @@ internal fun EpisodeRow(
                                     episode = episodeMeta?.getOrNull(index),
                                     selected = index == playIndex,
                                     onClick = { vm.onEpisodeClick(index) },
-                                    onDownloadClick = { vm.onDownloadClick(index) },
-                                    downloadState = state,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             } else {
@@ -167,8 +165,6 @@ internal fun EpisodeRow(
                                     name = ep.name ?: (index + 1).toString(),
                                     selected = index == playIndex,
                                     onClick = { vm.onEpisodeClick(index) },
-                                    onDownloadClick = { vm.onDownloadClick(index) },
-                                    downloadState = state,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             }
@@ -214,8 +210,6 @@ private fun EpisodeCard(
     episode: TmdbEpisode?,
     selected: Boolean,
     onClick: () -> Unit,
-    onDownloadClick: (() -> Unit)? = null,
-    downloadState: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     val stillPath = episode?.stillPath.orEmpty()
@@ -259,13 +253,6 @@ private fun EpisodeCard(
                     .background(Color.Black.copy(alpha = 0.55f))
                     .padding(horizontal = 7.dp, vertical = 1.dp),
             )
-            if (downloadState != null && onDownloadClick != null) {
-                DownloadBadge(
-                    state = downloadState,
-                    onClick = onDownloadClick,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
-                )
-            }
         }
         Text(
             text = title,
@@ -287,8 +274,6 @@ private fun EpisodeNameCard(
     name: String,
     selected: Boolean,
     onClick: () -> Unit,
-    onDownloadClick: (() -> Unit)? = null,
-    downloadState: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(16.dp)
@@ -318,45 +303,6 @@ private fun EpisodeNameCard(
             maxLines = Int.MAX_VALUE,
             softWrap = true,
             textAlign = TextAlign.Center,
-        )
-        if (downloadState != null && onDownloadClick != null) {
-            DownloadBadge(
-                state = downloadState,
-                onClick = onDownloadClick,
-                modifier = Modifier.align(Alignment.TopEnd),
-            )
-        }
-    }
-}
-
-@Composable
-private fun DownloadBadge(
-    state: Int?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val icon = when (state) {
-        2, 1, 4 -> R.drawable.ic_download_pause
-        5 -> R.drawable.ic_download_done
-        else -> R.drawable.ic_download
-    }
-    val tint = when (state) {
-        5 -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Box(
-        modifier = modifier
-            .size(28.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = stringResource(R.string.download_title),
-            tint = tint,
-            modifier = Modifier.size(16.dp),
         )
     }
 }
@@ -542,8 +488,8 @@ internal fun BatchDownloadSheet(
 ) {
     val selected by vm.selectedEpisodes.collectAsState()
     val downloadStates by vm.downloadState.collectAsState()
-    val completed = episodes.map { downloadStates[it.name.orEmpty()] == 5 }
-    val selectable = episodes.indices.filter { !completed[it] }
+    val statuses = episodes.map { downloadStates[it.name.orEmpty()] }
+    val selectable = episodes.indices.filter { val s = statuses[it]; s == null || s == 6 }
     ModalBottomSheet(
         onDismissRequest = {
             vm.clearEpisodeSelection()
@@ -581,8 +527,8 @@ internal fun BatchDownloadSheet(
                 items(episodes.size) { index ->
                     SelectableEpisodeCard(
                         name = episodes[index].name ?: (index + 1).toString(),
+                        status = statuses[index],
                         selected = index in selected,
-                        completed = completed[index],
                         onToggle = { vm.toggleEpisodeSelect(index) },
                     )
                 }
@@ -631,11 +577,12 @@ internal fun BatchDownloadSheet(
 @Composable
 private fun SelectableEpisodeCard(
     name: String,
+    status: Int?,
     selected: Boolean,
-    completed: Boolean,
     onToggle: () -> Unit,
 ) {
-    Box(
+    val selectable = status == null || status == 6
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .detailGlass(RoundedCornerShape(16.dp))
@@ -646,13 +593,15 @@ private fun SelectableEpisodeCard(
                     Modifier
                 },
             )
-            .clickable(enabled = !completed, onClick = onToggle)
+            .clickable(enabled = selectable, onClick = onToggle)
             .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = name,
             style = MaterialTheme.typography.titleMedium,
-            color = if (completed) {
+            fontWeight = FontWeight.SemiBold,
+            color = if (!selectable) {
                 MaterialTheme.colorScheme.onSurfaceVariant
             } else if (selected) {
                 MaterialTheme.colorScheme.primary
@@ -661,29 +610,46 @@ private fun SelectableEpisodeCard(
             },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         Box(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(20.dp)
+                .size(22.dp)
                 .clip(CircleShape)
                 .then(
-                    if (selected) {
-                        Modifier.background(MaterialTheme.colorScheme.primary)
-                    } else {
-                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
+                    when {
+                        selected -> Modifier.background(MaterialTheme.colorScheme.primary)
+                        selectable -> Modifier.border(1.5.dp, MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
+                        else -> Modifier
                     },
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected || completed) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_download_done),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(14.dp),
-                )
+            when (status) {
+                5 -> StatusIcon(R.drawable.ic_download_done, MaterialTheme.colorScheme.primary)
+                1, 2, 4 -> StatusIcon(R.drawable.ic_download_pause, MaterialTheme.colorScheme.primary)
+                3 -> StatusIcon(R.drawable.ic_download_pause, MaterialTheme.colorScheme.onSurfaceVariant)
+                6 -> StatusIcon(R.drawable.ic_download_error, MaterialTheme.colorScheme.error)
+                else -> if (selected) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_download_done),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun StatusIcon(iconRes: Int, tint: Color) {
+    Icon(
+        painter = painterResource(iconRes),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(16.dp),
+    )
 }

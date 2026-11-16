@@ -683,4 +683,5 @@
     <string name="detail_menu_audio">Audio</string>
     <string name="detail_batch_done">Done</string>
     <string name="detail_batch_selected">%1$d of %2$d selected</string>
+    <string name="download_batch_resumed">Resumed %1$d download(s)</string>
 </resources>

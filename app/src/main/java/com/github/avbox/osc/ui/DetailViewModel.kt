@@ -327,7 +327,45 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         val positions = _selectedEpisodes.value.toList().sorted()
         if (positions.isEmpty()) return
         _selectedEpisodes.value = emptySet()
-        launchDownload(info, positions)
+        viewModelScope.launch(Dispatchers.IO) {
+            val cid = CurrentSubscription.cid()
+            val list = info.seriesMap?.get(info.playFlag).orEmpty()
+            val newTasks = ArrayList<DownloadTask>()
+            var resumed = 0
+            for (index in positions) {
+                val series = list.getOrNull(index) ?: continue
+                val existing = AppGraph.downloadRepository.findEpisode(
+                    cid,
+                    info.sourceKey ?: sourceKey,
+                    info.id,
+                    info.playFlag,
+                    series.name,
+                )
+                if (existing == null) {
+                    buildDownloadTask(info, index, series)?.let { newTasks.add(it) }
+                } else {
+                    when (existing.status()) {
+                        DownloadState.FAILED -> {
+                            DownloadManager.retry(existing.id)
+                            resumed++
+                        }
+                        DownloadState.PAUSED -> {
+                            DownloadManager.resume(existing.id)
+                            resumed++
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+            if (newTasks.isNotEmpty()) DownloadManager.enqueue(newTasks)
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                when {
+                    newTasks.isNotEmpty() -> _toastEvent.tryEmit(str(R.string.download_batch_added, newTasks.size))
+                    resumed > 0 -> _toastEvent.tryEmit(str(R.string.download_batch_resumed, resumed))
+                    else -> _toastEvent.tryEmit(str(R.string.download_batch_none))
+                }
+            }
+        }
     }
 
     private val _downloadState = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -1185,29 +1223,32 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         _toastEvent.tryEmit(str(R.string.download_batch_added, targets.size))
     }
 
+    private fun buildDownloadTask(info: VodInfo, index: Int, series: VodInfo.VodSeries): DownloadTask? {
+        val url = series.url ?: return null
+        return DownloadTask().apply {
+            this.cid = CurrentSubscription.cid()
+            this.sourceKey = info.sourceKey ?: sourceKey
+            this.vodId = info.id
+            this.vodName = info.name
+            this.vodPic = info.pic
+            this.episodeName = series.name
+            this.playFlag = info.playFlag
+            this.episodeIndex = index
+            this.episodeUrl = url
+            this.downloadType = if (url.contains(".m3u8", ignoreCase = true)) {
+                DownloadType.M3U8.ordinal
+            } else {
+                DownloadType.HTTP.ordinal
+            }
+            this.state = DownloadState.WAITING.ordinal
+        }
+    }
+
     private fun launchDownload(info: VodInfo, positions: List<Int>) {
         val list = info.seriesMap?.get(info.playFlag) ?: return
-        val cid = CurrentSubscription.cid()
         val tasks = positions.mapNotNull { index ->
             val series = list.getOrNull(index) ?: return@mapNotNull null
-            val url = series.url ?: return@mapNotNull null
-            DownloadTask().apply {
-                this.cid = cid
-                this.sourceKey = info.sourceKey ?: sourceKey
-                this.vodId = info.id
-                this.vodName = info.name
-                this.vodPic = info.pic
-                this.episodeName = series.name
-                this.playFlag = info.playFlag
-                this.episodeIndex = index
-                this.episodeUrl = url
-                this.downloadType = if (url.contains(".m3u8", ignoreCase = true)) {
-                    DownloadType.M3U8.ordinal
-                } else {
-                    DownloadType.HTTP.ordinal
-                }
-                this.state = DownloadState.WAITING.ordinal
-            }
+            buildDownloadTask(info, index, series)
         }
         if (tasks.isEmpty()) return
         DownloadManager.enqueue(tasks)
