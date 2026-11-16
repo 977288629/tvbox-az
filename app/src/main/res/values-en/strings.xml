@@ -681,4 +681,5 @@
     <string name="common_more">More</string>
     <string name="detail_play_count">Play · %1$d eps</string>
     <string name="detail_menu_audio">Audio</string>
+    <string name="detail_batch_done">Done</string>
 </resources>

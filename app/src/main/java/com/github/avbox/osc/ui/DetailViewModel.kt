@@ -306,6 +306,13 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
     private var pendingLocal: Pair<Int, String>? = null
 
+    private val _batchDownloadMode = MutableStateFlow(false)
+    val batchDownloadMode = _batchDownloadMode.asStateFlow()
+
+    fun toggleBatchDownloadMode() {
+        _batchDownloadMode.value = !_batchDownloadMode.value
+    }
+
     private val _downloadState = MutableStateFlow<Map<String, Int>>(emptyMap())
     val downloadState = _downloadState.asStateFlow()
     private val _localFiles = MutableStateFlow<Map<String, String>>(emptyMap())

@@ -77,6 +77,7 @@ internal fun EpisodeRow(
             .fillMaxWidth()
             .padding(top = 16.dp)
     ) {
+        val batchMode by vm.batchDownloadMode.collectAsState()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,8 +111,9 @@ internal fun EpisodeRow(
             Spacer(Modifier.width(2.dp))
             PillAction(
                 iconRes = R.drawable.ic_download,
-                text = stringResource(R.string.download_batch),
-                onClick = { vm.onBatchDownload() },
+                text = stringResource(if (batchMode) R.string.detail_batch_done else R.string.download_batch),
+                tint = if (batchMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                onClick = { vm.toggleBatchDownloadMode() },
             )
         }
         val seasonHint = remember(info.name, currentFlag) {
@@ -156,6 +158,7 @@ internal fun EpisodeRow(
                                     episode = episodeMeta?.getOrNull(index),
                                     selected = index == playIndex,
                                     onClick = { vm.onEpisodeClick(index) },
+                                    showDownload = batchMode || state != null,
                                     onDownloadClick = { vm.onDownloadClick(index) },
                                     downloadState = state,
                                     modifier = Modifier.fillMaxWidth(),
@@ -165,6 +168,7 @@ internal fun EpisodeRow(
                                     name = ep.name ?: (index + 1).toString(),
                                     selected = index == playIndex,
                                     onClick = { vm.onEpisodeClick(index) },
+                                    showDownload = batchMode || state != null,
                                     onDownloadClick = { vm.onDownloadClick(index) },
                                     downloadState = state,
                                     modifier = Modifier.fillMaxWidth(),
@@ -212,6 +216,7 @@ private fun EpisodeCard(
     episode: TmdbEpisode?,
     selected: Boolean,
     onClick: () -> Unit,
+    showDownload: Boolean = false,
     onDownloadClick: (() -> Unit)? = null,
     downloadState: Int? = null,
     modifier: Modifier = Modifier,
@@ -257,7 +262,7 @@ private fun EpisodeCard(
                     .background(Color.Black.copy(alpha = 0.55f))
                     .padding(horizontal = 7.dp, vertical = 1.dp),
             )
-            if (onDownloadClick != null) {
+            if (showDownload && onDownloadClick != null) {
                 DownloadBadge(
                     state = downloadState,
                     onClick = onDownloadClick,
@@ -285,6 +290,7 @@ private fun EpisodeNameCard(
     name: String,
     selected: Boolean,
     onClick: () -> Unit,
+    showDownload: Boolean = false,
     onDownloadClick: (() -> Unit)? = null,
     downloadState: Int? = null,
     modifier: Modifier = Modifier,
@@ -317,7 +323,7 @@ private fun EpisodeNameCard(
             softWrap = true,
             textAlign = TextAlign.Center,
         )
-        if (onDownloadClick != null) {
+        if (showDownload && onDownloadClick != null) {
             DownloadBadge(
                 state = downloadState,
                 onClick = onDownloadClick,
@@ -360,7 +366,7 @@ private fun DownloadBadge(
 }
 
 @Composable
-private fun PillAction(iconRes: Int, text: String, onClick: () -> Unit) {
+private fun PillAction(iconRes: Int, text: String, onClick: () -> Unit, tint: Color = MaterialTheme.colorScheme.onSurface) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -371,13 +377,13 @@ private fun PillAction(iconRes: Int, text: String, onClick: () -> Unit) {
         Icon(
             painter = painterResource(iconRes),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = tint,
             modifier = Modifier.size(16.dp),
         )
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = tint,
             modifier = Modifier.padding(start = 4.dp),
         )
     }

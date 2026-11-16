@@ -272,7 +272,6 @@ internal fun DetailHero(
                 collected = collected,
                 onBack = onBack,
                 onCollect = onCollect,
-                onBatchDownload = { vm.onBatchDownload() },
                 onMusic = onMusic,
                 onCast = onCast,
                 onFollow = onFollow,
@@ -365,8 +364,7 @@ internal fun DetailHero(
                     collected = collected,
                     onBack = onBack,
                     onCollect = onCollect,
-                    onBatchDownload = { vm.onBatchDownload() },
-                    onMusic = onMusic,
+                        onMusic = onMusic,
                     onCast = onCast,
                     onFollow = onFollow,
                     fallbackColor = circleColor,
@@ -421,7 +419,6 @@ private fun DetailHeroTopActions(
     collected: Boolean,
     onBack: () -> Unit,
     onCollect: () -> Unit,
-    onBatchDownload: () -> Unit,
     onMusic: () -> Unit,
     onCast: () -> Unit,
     onFollow: () -> Unit,
@@ -469,10 +466,6 @@ private fun DetailHeroTopActions(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 shadowElevation = 4.dp,
             ) {
-                DetailHeroMenuAction(R.drawable.ic_download, stringResource(R.string.download_batch)) {
-                    menuExpanded = false
-                    onBatchDownload()
-                }
                 DetailHeroMenuAction(R.drawable.ic_detail_music_player, stringResource(R.string.detail_menu_audio)) {
                     menuExpanded = false
                     onMusic()
