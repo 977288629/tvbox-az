@@ -247,7 +247,10 @@ private fun EpisodeRow(
             }
         }
         Spacer(Modifier.width(4.dp))
-        Row(horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             when {
                 item.isCompleted -> PillIconButton(R.drawable.player_ic_play, MaterialTheme.colorScheme.tertiaryContainer, onPlay)
                 item.canResume -> PillIconButton(R.drawable.player_ic_play, MaterialTheme.colorScheme.primaryContainer, onResume)
@@ -256,8 +259,6 @@ private fun EpisodeRow(
                     Text(stringResource(R.string.download_action_retry), style = MaterialTheme.typography.labelLarge)
                 }
             }
-            if (!item.isCompleted) Spacer(Modifier.width(8.dp))
-            Spacer(Modifier.width(8.dp))
             PillIconButton(
                 if (item.isCompleted) R.drawable.ic_download_delete else R.drawable.ic_download_cancel,
                 MaterialTheme.colorScheme.surfaceContainerHighest,
