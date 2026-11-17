@@ -74,6 +74,16 @@ input[type=range]::-webkit-slider-thumb {
 .episodes { max-height: 300px; overflow-y: auto; }
 .episodes .chip { min-width: 44px; text-align: center; }
 .hidden { display: none !important; }
+.hist-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
+.hist-item { display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--card-2); border-radius: 12px; cursor: pointer; }
+.hist-item:active { background: var(--accent-soft); }
+.hist-item img { width: 44px; height: 60px; object-fit: cover; border-radius: 8px; background: #2a2e36; flex: 0 0 auto; }
+.hist-info { flex: 1; min-width: 0; }
+.hist-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-sub { font-size: 11px; color: var(--sub); margin-top: 3px; }
+.hist-bar { height: 3px; background: #34383f; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.hist-bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.hist-empty { font-size: 12px; color: var(--sub); text-align: center; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -126,6 +136,12 @@ input[type=range]::-webkit-slider-thumb {
     <div class="sec-title">选集</div>
     <div class="chips episodes" id="epChips"></div>
   </div>
+
+  <div class="card hidden" id="histCard">
+    <div class="sec-title">观看记录（点击推送到设备播放）</div>
+    <div class="hist-list" id="histList"></div>
+    <div class="hist-empty" id="histEmpty">暂无观看记录</div>
+  </div>
 </div>
 
 <script>
@@ -145,6 +161,7 @@ input[type=range]::-webkit-slider-thumb {
   var elSpeedCard = $('speedCard'), elSpeedChips = $('speedChips');
   var elVolCard = $('volCard'), elVol = $('vol'), elVolText = $('volText'), elMute = $('btnMute');
   var elEpCard = $('epCard'), elEpChips = $('epChips');
+  var elHistCard = $('histCard'), elHistList = $('histList'), elHistEmpty = $('histEmpty');
 
   function fmt(sec) {
     sec = Math.max(0, Math.floor(sec));
@@ -253,6 +270,66 @@ input[type=range]::-webkit-slider-thumb {
     elNet.textContent = '未连接';
   }
 
+  function fmtTime(ms) {
+    var sec = Math.floor(ms / 1000);
+    if (sec < 60) return '刚刚';
+    if (sec < 3600) return Math.floor(sec / 60) + ' 分钟前';
+    if (sec < 86400) return Math.floor(sec / 3600) + ' 小时前';
+    return Math.floor(sec / 86400) + ' 天前';
+  }
+
+  function renderHistory(items) {
+    if (!items || !items.length) {
+      elHistCard.classList.remove('hidden');
+      elHistList.classList.add('hidden');
+      elHistEmpty.classList.remove('hidden');
+      elHistList.innerHTML = '';
+      return;
+    }
+    elHistCard.classList.remove('hidden');
+    elHistEmpty.classList.add('hidden');
+    elHistList.classList.remove('hidden');
+    elHistList.innerHTML = '';
+    items.forEach(function (it) {
+      var row = document.createElement('div');
+      row.className = 'hist-item';
+      var img = document.createElement('img');
+      img.src = it.pic || '';
+      img.loading = 'lazy';
+      row.appendChild(img);
+      var info = document.createElement('div');
+      info.className = 'hist-info';
+      var t = document.createElement('div');
+      t.className = 'hist-title';
+      t.textContent = it.title || '';
+      info.appendChild(t);
+      var sub = document.createElement('div');
+      sub.className = 'hist-sub';
+      var pct = Math.min(100, Math.max(0, it.percent || 0));
+      var epText = it.episodeName ? ('看到 ' + it.episodeName + ' · ') : '';
+      sub.textContent = epText + pct + '% · ' + fmtTime(it.updateTime || 0);
+      info.appendChild(sub);
+      var bar = document.createElement('div');
+      bar.className = 'hist-bar';
+      var fill = document.createElement('i');
+      fill.style.width = Math.min(100, Math.max(0, it.percent || 0)) + '%';
+      bar.appendChild(fill);
+      info.appendChild(bar);
+      row.appendChild(info);
+      row.onclick = function () {
+        send({ action: 'playRecord', sourceKey: it.sourceKey || '', vodId: it.vodId || '' });
+      };
+      elHistList.appendChild(row);
+    });
+  }
+
+  function fetchHistory() {
+    if (document.hidden) return;
+    api({ action: 'history', limit: 12 }).then(function (res) {
+      if (res && res.code === 0) renderHistory(res.data || []);
+    }).catch(function () {});
+  }
+
   function poll() {
     if (document.hidden) return;
     api({ action: 'get' }).then(function (res) {
@@ -307,7 +384,9 @@ input[type=range]::-webkit-slider-thumb {
   });
 
   setInterval(poll, 1000);
+  setInterval(fetchHistory, 5000);
   poll();
+  fetchHistory();
 })();
 </script>
 </body>

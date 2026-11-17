@@ -41,6 +41,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun init() {
+        RemoteHistoryBridge.install()
         enableTransparentEdgeToEdge()
         applyStatusBarAppearance()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && !PermissionHelper.isStorageGranted(this)) {

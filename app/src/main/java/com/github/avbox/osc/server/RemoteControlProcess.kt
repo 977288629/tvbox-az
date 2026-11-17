@@ -4,6 +4,8 @@ import android.content.Context
 
 import com.github.avbox.osc.data.RemoteControlPort
 import com.github.avbox.osc.data.RemoteControlPorts
+import com.github.avbox.osc.data.RemoteHistoryItem
+import com.github.avbox.osc.data.RemoteHistoryPorts
 import com.github.avbox.osc.data.RemotePlaybackSnapshot
 import com.github.avbox.osc.util.AppLog
 import com.google.gson.JsonArray
@@ -42,7 +44,17 @@ class RemoteControlProcess(private val hostContext: Context) : RequestProcess {
     private fun serveApi(params: MutableMap<String, String>?): NanoHTTPD.Response {
         val port = RemoteControlPorts.port
         val action = params?.get("action").orEmpty()
-        if (action != "get") {
+        if (action == "history") {
+            val limit = params?.get("limit")?.toIntOrNull()?.coerceIn(1, 100) ?: 20
+            val items = RemoteHistoryPorts.port?.recent(limit) ?: emptyList()
+            return jsonOk(historyBody(items))
+        }
+        if (action == "playRecord") {
+            RemoteHistoryPorts.port?.playRecord(
+                params?.get("sourceKey").orEmpty(),
+                params?.get("vodId").orEmpty(),
+            )
+        } else if (action != "get") {
             if (port == null) return jsonOk(errorBody("engine not ready"))
             dispatch(port, action, params)
         }
@@ -61,6 +73,28 @@ class RemoteControlProcess(private val hostContext: Context) : RequestProcess {
             "vol" -> params?.get("value")?.toIntOrNull()?.let { port.setVolume(it) }
             "mute" -> port.toggleMute()
         }
+    }
+
+    private fun historyBody(items: List<RemoteHistoryItem>): JsonObject {
+        val body = JsonObject()
+        body.addProperty("code", 0)
+        val list = JsonArray()
+        for (item in items) {
+            val obj = JsonObject()
+            obj.addProperty("vodId", item.vodId)
+            obj.addProperty("sourceKey", item.sourceKey)
+            obj.addProperty("title", item.title)
+            obj.addProperty("pic", item.pic)
+            obj.addProperty("updateTime", item.updateTime)
+            obj.addProperty("flag", item.flag)
+            obj.addProperty("episodeIndex", item.episodeIndex)
+            obj.addProperty("episodeCount", item.episodeCount)
+            obj.addProperty("episodeName", item.episodeName)
+            obj.addProperty("percent", item.percent)
+            list.add(obj)
+        }
+        body.add("data", list)
+        return body
     }
 
     private fun okBody(snapshot: RemotePlaybackSnapshot?): JsonObject {
