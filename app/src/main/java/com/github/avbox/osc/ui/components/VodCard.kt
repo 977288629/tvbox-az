@@ -72,51 +72,53 @@ private fun StackedCard(
     onLongClick: () -> Unit,
     modifier: Modifier,
 ) {
-    Column(modifier = modifier) {
-        PressableCard(
-            onClick = onClick,
-            onLongClick = onLongClick,
-            shape = CardShape,
-        ) {
-            Box(modifier = Modifier.aspectRatio(2f / 3f)) {
-                VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                0f to Color.Transparent,
-                                0.6f to Color.Transparent,
-                                1f to Color.Black.copy(alpha = 0.4f),
-                            )
-                        ),
+    // 对齐 iOS FeaturedCard: 竖版海报 + 底部深色渐变 + 叠加白色剧名/元信息,
+    // 剧名永远可见(海报自带艺术字时也不与下方文字争空间)。
+    PressableCard(
+        onClick = onClick,
+        onLongClick = onLongClick,
+        modifier = modifier,
+        shape = CardShape,
+    ) {
+        Box(modifier = Modifier.aspectRatio(2f / 3f)) {
+            VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.4f to Color.Transparent,
+                            0.72f to Color.Black.copy(alpha = 0.55f),
+                            1f to Color.Black.copy(alpha = 0.92f),
+                        )
+                    ),
+            )
+            RatingBadge(video, Modifier.align(Alignment.TopEnd))
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 8.dp, vertical = 7.dp)
+                    .fillMaxWidth(),
+            ) {
+                Text(
+                    text = video.name.orEmpty(),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                RatingBadge(video, Modifier.align(Alignment.TopEnd))
-                if (!video.note.isNullOrBlank()) {
-                    NoteBadge(video.note, Modifier.align(Alignment.BottomStart))
+                val meta = metaText(video)
+                if (meta.isNotEmpty()) {
+                    Text(
+                        text = meta,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.78f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
                 }
             }
-        }
-        Text(
-            text = video.name.orEmpty(),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 6.dp),
-        )
-        val meta = metaText(video)
-        if (meta.isNotEmpty()) {
-            Text(
-                text = meta,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }

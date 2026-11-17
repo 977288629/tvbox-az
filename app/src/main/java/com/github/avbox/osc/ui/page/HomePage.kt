@@ -705,7 +705,7 @@ private fun PartitionSection(
     onCardClick: (Movie.Video) -> Unit,
     onCardLongClick: (Movie.Video) -> Unit,
     onRetry: (() -> Unit)? = null,
-    cardWidth: Dp = 110.dp,
+    cardWidth: Dp = 128.dp,
     modifier: Modifier = Modifier,
 ) {
     val cardStyle = UiSettingsState.config.vodCardStyle
