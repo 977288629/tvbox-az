@@ -284,6 +284,25 @@ internal class LivePlayViewModel : ViewModel() {
         }
     }
 
+    internal fun updateSourceSpeed(sourceIndex: Int, speedMs: Int) {
+        settingGroups = settingGroups.map { group ->
+            if (group.groupIndex != 0) {
+                group
+            } else {
+                LiveSettingGroup().apply {
+                    groupIndex = group.groupIndex
+                    groupName = group.groupName
+                    liveSettingItems = group.liveSettingItems?.let { items ->
+                        ArrayList(items.map { item ->
+                            if (item.itemIndex == sourceIndex) item.also { it.itemSpeedMs = speedMs } else item
+                        })
+                    }
+                }
+            }
+        }
+        if (_state.value.settings.sheetVisible) refreshSettingsSnapshot()
+    }
+
     internal fun updateCurrentSourceItems(items: ArrayList<LiveSettingItem>) {
         settingGroups = settingGroups.map { group ->
             if (group.groupIndex == 0) {

@@ -71,6 +71,8 @@ class LivePlayActivity : BaseActivity() {
     private val handler = Handler(Looper.getMainLooper())
     @Volatile
     private var sourceSwitchJob: Job? = null
+
+    private var speedTestJob: Job? = null
     private val livePlayerManager = LivePlayerManager()
     private var exitingLivePlay = false
     private var nowday = Date()
@@ -597,6 +599,22 @@ class LivePlayActivity : BaseActivity() {
         initLiveSettingGroupList()
         loadCurrentSourceList()
         vm.onSettingsOpened()
+        startSourceSpeedTest()
+    }
+
+    private fun startSourceSpeedTest() {
+        val channel = currentLiveChannelItem ?: return
+        val urls = channel.channelUrls ?: return
+        if (urls.isEmpty()) return
+        val headers = channel.headers
+        speedTestJob?.cancel()
+        speedTestJob = lifecycleScope.launch {
+            for (index in urls.indices) {
+                val url = urls.getOrNull(index) ?: continue
+                val result = LiveSpeedTester.probe(url, headers)
+                vm.updateSourceSpeed(index, result)
+            }
+        }
     }
 
     internal fun removeLiveConfigHistory(itemIndex: Int) {

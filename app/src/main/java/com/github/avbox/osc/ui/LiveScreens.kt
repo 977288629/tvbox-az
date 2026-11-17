@@ -705,6 +705,22 @@ private fun SettingsSheet(
                                         title = item.title,
                                         selected = item.selected,
                                         onClick = { onItemClick(group.groupIndex, item.itemIndex) },
+                                        trailing = if (item.tail.isNotEmpty()) {
+                                            {
+                                                Text(
+                                                    text = item.tail,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = if (item.tailGood) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                    },
+                                                    modifier = Modifier.padding(end = 4.dp),
+                                                )
+                                            }
+                                        } else {
+                                            null
+                                        },
                                         onLongClick = if (group.groupIndex == LiveSettingsSnapshot.CONFIG_GROUP_INDEX && item.itemIndex > 0) {
                                             { onItemLongClick(item.itemIndex - 1) }
                                         } else {

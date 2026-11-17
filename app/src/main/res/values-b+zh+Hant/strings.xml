@@ -693,4 +693,7 @@
     <string name="settings_remote_dialog_copy">複製地址</string>
     <string name="settings_remote_copied">已複製遙控地址</string>
     <string name="settings_remote_empty">暫未獲取到地址，請稍後重試</string>
+    <string name="live_speed_ms">%1$dms</string>
+    <string name="live_speed_timeout">超時</string>
+    <string name="live_speed_unsupported">不支持</string>
 </resources>

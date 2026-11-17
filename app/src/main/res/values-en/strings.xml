@@ -693,4 +693,7 @@
     <string name="settings_remote_dialog_copy">Copy address</string>
     <string name="settings_remote_copied">Remote address copied</string>
     <string name="settings_remote_empty">Address not ready, try again later</string>
+    <string name="live_speed_ms">%1$dms</string>
+    <string name="live_speed_timeout">Timeout</string>
+    <string name="live_speed_unsupported">N/A</string>
 </resources>

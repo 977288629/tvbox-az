@@ -1,7 +1,10 @@
 package com.github.avbox.osc.ui
 
+import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.LiveChannelItem
 import com.github.avbox.osc.bean.LiveSettingGroup
+import com.github.avbox.osc.util.AppContextHolder
+import com.github.avbox.osc.util.LanguageManager
 
 internal interface LiveSettingsSource {
     fun settingGroups(): List<LiveSettingGroup>
@@ -26,6 +29,8 @@ internal data class LiveSettingsItemUi(
     val title: String,
     val checked: Boolean = false,
     val selected: Boolean = false,
+    val tail: String = "",
+    val tailGood: Boolean = false,
 )
 
 internal data class LiveSettingsGroupUi(
@@ -58,15 +63,33 @@ internal object LiveSettingsSnapshot {
                 switchRow = switchRow,
                 longPressDelete = group.groupIndex == CONFIG_GROUP_INDEX && !source.isLiveApiLineMode(),
                 items = items.map { item ->
+                    val badge = speedBadge(group.groupIndex, item.itemSpeedMs)
                     LiveSettingsItemUi(
                         itemIndex = item.itemIndex,
                         title = item.itemName.orEmpty(),
                         checked = switchRow && source.switchChecked(item.itemIndex),
                         selected = !switchRow && item.itemIndex == selectedIndex,
+                        tail = badge.first,
+                        tailGood = badge.second,
                     )
                 },
             )
         }
+    }
+
+    private fun speedBadge(groupIndex: Int, speedMs: Int): Pair<String, Boolean> {
+        if (groupIndex != 0) return "" to false
+        return when {
+            speedMs > 0 -> str(R.string.live_speed_ms, speedMs) to true
+            speedMs == LiveSpeedTester.RESULT_FAILED -> str(R.string.live_speed_timeout) to false
+            speedMs == LiveSpeedTester.RESULT_UNSUPPORTED -> str(R.string.live_speed_unsupported) to false
+            else -> "" to false
+        }
+    }
+
+    private fun str(resId: Int, vararg args: Any): String {
+        val context = AppContextHolder.context() ?: return ""
+        return LanguageManager.localized(context).getString(resId, *args)
     }
 
     private fun selectedIndex(source: LiveSettingsSource, groupIndex: Int, sourceIndex: Int): Int =
