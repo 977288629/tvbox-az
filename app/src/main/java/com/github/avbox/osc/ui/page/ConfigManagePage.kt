@@ -1,5 +1,8 @@
 package com.github.avbox.osc.ui.page
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -60,6 +63,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
+import com.github.avbox.osc.ui.ScanQrActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import com.github.avbox.osc.api.ApiConfig
 import com.github.avbox.osc.ui.ConfigManageActivity
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
@@ -97,6 +103,12 @@ fun ConfigManageScreen(onNavigateBack: () -> Unit) {
     val vm: ConfigManageViewModel = viewModel(factory = ConfigManageViewModel.defaultFactory())
     var mode by rememberSaveable { mutableStateOf(ConfigMode.Vod) }
     var addDialogOpen by remember { mutableStateOf(false) }
+    var scannedUrl by remember { mutableStateOf<String?>(null) }
+    val scanLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            scannedUrl = result.data?.getStringExtra(ScanQrActivity.EXTRA_RESULT)
+        }
+    }
     var repoSheetOpen by remember { mutableStateOf(false) }
     val vodItems by vm.vodItems.collectAsState()
     val liveItems by vm.liveItems.collectAsState()
@@ -394,6 +406,10 @@ fun ConfigManageScreen(onNavigateBack: () -> Unit) {
             urlSupportingText = if (isVod) "" else stringResource(R.string.config_live_source_hint),
             initialName = editing?.name.orEmpty(),
             initialUrl = editing?.url.orEmpty(),
+            scannedUrl = scannedUrl,
+            onScan = {
+                scanLauncher.launch(Intent(context, ScanQrActivity::class.java))
+            },
             onDismiss = {
                 addDialogOpen = false
                 vm.closeEdit()
@@ -622,12 +638,20 @@ private fun AddSubscribeDialog(
     urlSupportingText: String,
     initialName: String,
     initialUrl: String,
+    scannedUrl: String?,
+    onScan: () -> Unit,
     onDismiss: () -> Unit,
     onSave: (String, String) -> Unit,
     onPickFile: (onPicked: (name: String, api: String) -> Unit) -> Unit,
 ) {
     var name by remember { mutableStateOf(initialName) }
     var url by remember { mutableStateOf(initialUrl) }
+    LaunchedEffect(scannedUrl) {
+        scannedUrl?.let {
+            url = it
+            if (name.isBlank()) name = it.substringAfterLast('/').substringBeforeLast('.')
+        }
+    }
     val urlHint: (@Composable () -> Unit)? = if (urlSupportingText.isEmpty()) {
         null
     } else {
@@ -650,6 +674,20 @@ private fun AddSubscribeDialog(
                     text = title,
                     modifier = Modifier.weight(1f),
                 )
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .glassSurface(CircleShape, MaterialTheme.colorScheme.surfaceBright)
+                        .clickable { onScan() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_camera_scan),
+                        contentDescription = stringResource(R.string.config_scan_qr),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .size(40.dp)

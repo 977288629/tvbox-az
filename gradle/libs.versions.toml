@@ -36,6 +36,7 @@ jsoup = "1.24.1"
 commonsIo = "2.22.0"
 juniversalchardet = "1.0.3"
 zxingCore = "3.5.4"
+cameraxVersion = "1.4.2"
 sardine = "0.9"
 desugarJdkLibs = "2.1.5"
 media3 = "1.11.1"
@@ -88,6 +89,10 @@ jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commonsIo" }
 juniversalchardet = { group = "com.googlecode.juniversalchardet", name = "juniversalchardet", version.ref = "juniversalchardet" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxingCore" }
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraxVersion" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraxVersion" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraxVersion" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraxVersion" }
 sardine = { group = "com.github.thegrizzlylabs", name = "sardine-android", version.ref = "sardine" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs_nio", version.ref = "desugarJdkLibs" }
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidxAnnotation" }
