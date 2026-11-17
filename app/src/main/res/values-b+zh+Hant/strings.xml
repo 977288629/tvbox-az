@@ -684,4 +684,5 @@
     <string name="detail_batch_done">完成</string>
     <string name="detail_batch_selected">已選 %1$d/%2$d 集</string>
     <string name="download_batch_resumed">已恢復 %1$d 個下載任務</string>
+    <string name="settings_card_style_grid">大圖圖文</string>
 </resources>

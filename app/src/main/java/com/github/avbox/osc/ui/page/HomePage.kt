@@ -772,7 +772,30 @@ private fun PartitionSection(
                 }
             }
 
-            HomeViewModel.PartitionState.Ready -> LazyRow(
+            HomeViewModel.PartitionState.Ready -> if (cardStyle.isGrid) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    videos.chunked(2).forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            row.forEach { video ->
+                                VodCard(
+                                    video = video,
+                                    onClick = { onCardClick(video) },
+                                    onLongClick = { onCardLongClick(video) },
+                                    modifier = Modifier.weight(1f),
+                                    style = cardStyle,
+                                )
+                            }
+                            repeat(2 - row.size) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                    LaunchedEffect(videos.size) { onLoadMore() }
+                }
+            } else LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -1136,7 +1159,11 @@ private fun LazyListScope.homeCategoryGrid(
         HomeViewModel.PartitionState.Ready -> {
             val videos = partition.videos
             val cardStyle = UiSettingsState.config.vodCardStyle
-            val rowColumns = if (fullSpan) 1 else columns
+            val rowColumns = when {
+                fullSpan -> 1
+                cardStyle.isGrid -> 2
+                else -> columns
+            }
             val rows = videos.chunked(rowColumns)
             itemsIndexed(rows, key = { i, _ -> "category_row_$i" }) { _, row ->
                 ProvideTmdbPosterLookup(vm) {

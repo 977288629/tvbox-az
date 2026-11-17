@@ -33,11 +33,14 @@ enum class VodCardStyle(@StringRes val labelRes: Int, @DrawableRes val iconRes: 
     Stacked(R.string.settings_card_style_stacked, R.drawable.ic_card_stacked),
     Overlay(R.string.settings_card_style_overlay, R.drawable.ic_card_overlay),
     Row(R.string.settings_card_style_row, R.drawable.ic_card_row),
-    Wide(R.string.settings_card_style_wide, R.drawable.ic_card_wide);
+    Wide(R.string.settings_card_style_wide, R.drawable.ic_card_wide),
+    Grid(R.string.settings_card_style_grid, R.drawable.ic_card_grid);
 
     val isPortrait: Boolean get() = this == Stacked || this == Overlay
 
-    val isFullSpan: Boolean get() = !isPortrait
+    val isFullSpan: Boolean get() = this == Row || this == Wide
+
+    val isGrid: Boolean get() = this == Grid
 
     companion object {
         fun of(value: Int): VodCardStyle = entries.getOrElse(value) { Stacked }
@@ -62,6 +65,7 @@ fun VodCard(
         VodCardStyle.Overlay -> OverlayCard(video, onClick, onLongClick, modifier)
         VodCardStyle.Row -> RowCard(video, onClick, onLongClick, modifier)
         VodCardStyle.Wide -> WideCard(video, onClick, onLongClick, modifier)
+        VodCardStyle.Grid -> GridCard(video, onClick, onLongClick, modifier)
     }
 }
 
@@ -416,4 +420,106 @@ internal fun isRatingNote(note: String?): Boolean {
     if (scoreText.isEmpty()) return false
     if (scoreText.toFloatOrNull() != null) return true
     return ratingBadgeText(scoreText) != scoreText
+}
+
+private val GridImageShape = RoundedCornerShape(10.dp)
+
+private val TagGreen = Color(0xFF5DC98A)
+
+private val TagGray = Color(0xFF6E7B8B)
+
+/** 16:9 大图 + 图上角标(集数/独播标签) + 图下剧名与副标题, 双列网格用。 */
+@Composable
+private fun GridCard(
+    video: Movie.Video,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier,
+) {
+    Column(modifier = modifier) {
+        PressableCard(
+            onClick = onClick,
+            onLongClick = onLongClick,
+            shape = GridImageShape,
+        ) {
+            Box(modifier = Modifier.aspectRatio(16f / 9f)) {
+                VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0.6f to Color.Transparent,
+                                1f to Color.Black.copy(alpha = 0.55f),
+                            )
+                        ),
+                )
+                val tag = video.tag?.trim().orEmpty()
+                if (tag.isNotEmpty()) {
+                    Text(
+                        text = tag,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (isFreeTag(tag)) TagGreen else TagGray)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+                val note = video.note?.trim().orEmpty()
+                if (note.isNotEmpty() && !isRatingNote(note)) {
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
+        Text(
+            text = video.name.orEmpty(),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        )
+        val subtitle = gridSubtitle(video)
+        if (subtitle.isNotEmpty()) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+private fun isFreeTag(tag: String): Boolean {
+    val t = tag.lowercase(java.util.Locale.ROOT)
+    return t.contains("免费") || t.contains("独播") || t.contains("限免") || t.contains("free")
+}
+
+/** 副标题优先用简介首句, 其次类型/地区等元信息。 */
+private fun gridSubtitle(video: Movie.Video): String {
+    val des = video.des?.let { android.text.Html.fromHtml(it, android.text.Html.FROM_HTML_MODE_LEGACY).toString() }
+        ?.replace(Regex("\\s+"), " ")
+        ?.trim()
+        .orEmpty()
+    if (des.isNotEmpty()) return des
+    return metaText(video)
 }
