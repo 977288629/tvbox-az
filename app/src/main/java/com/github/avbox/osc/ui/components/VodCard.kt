@@ -191,6 +191,8 @@ private fun RowCard(
     onLongClick: () -> Unit,
     modifier: Modifier,
 ) {
+    // Spec: Netflix/Disney+/iOS VideoCard - poster 2:3 left, title 16sp SemiBold,
+    // score badge poster bottom-left, episode badge poster bottom-right, tag poster top-right.
     PressableCard(
         onClick = onClick,
         onLongClick = onLongClick,
@@ -207,11 +209,64 @@ private fun RowCard(
             Box(
                 modifier = Modifier
                     .width(104.dp)
-                    .height(148.dp)
+                    .height(156.dp)
                     .clip(PosterShape),
             ) {
                 VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
-                RatingBadge(video, Modifier.align(Alignment.BottomStart))
+                val score = ratingBadgeText(video.note)
+                if (score != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = "★",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp,
+                        )
+                        Text(
+                            text = score,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 2.dp),
+                        )
+                    }
+                }
+                val note = video.note?.trim().orEmpty()
+                if (note.isNotEmpty() && note.toFloatOrNull()?.let { it != 0f } != false && score == null) {
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+                val tag = video.tag?.trim().orEmpty()
+                if (tag.isNotEmpty()) {
+                    Text(
+                        text = tag,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Black.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(TagGreen)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(14.dp))
             Column(
@@ -220,7 +275,7 @@ private fun RowCard(
             ) {
                 Text(
                     text = video.name.orEmpty(),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
@@ -230,17 +285,17 @@ private fun RowCard(
                 if (score != null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                     ) {
                         Text(
                             text = "★",
                             color = MaterialTheme.colorScheme.primary,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                         )
                         Text(
                             text = score,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(start = 4.dp),
                         )
                     }
@@ -253,7 +308,7 @@ private fun RowCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
                 val summary = video.des?.let {
@@ -292,21 +347,6 @@ private fun RowCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
-                val note = video.note
-                if (!note.isNullOrBlank() && score == null && note.trim().toFloatOrNull()?.let { it != 0f } != false) {
-                    Text(
-                        text = note,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .padding(top = 6.dp)
-                            .clip(BadgeShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
             }
