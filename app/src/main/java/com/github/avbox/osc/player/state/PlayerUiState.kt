@@ -533,6 +533,7 @@ class ParamsSheetState(
     val onSetTimeEnd: () -> Unit,
     val onResetTime: () -> Unit,
     val onSearchDanmu: (() -> Unit)?,
+    val onPipClicked: (() -> Unit)? = null,
 )
 
 class PictureParamsState(

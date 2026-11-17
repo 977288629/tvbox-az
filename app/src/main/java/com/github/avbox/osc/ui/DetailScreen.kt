@@ -318,7 +318,11 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                         }
 
                         is DetailViewModel.PageState.Ready -> {
+                            val pipMode by activity.pipMode
                             CompositionLocalProvider(LocalTopBarGlassBackdrop provides pageBackdrop) {
+                                if (pipMode) {
+                                    Box(modifier = Modifier.fillMaxSize())
+                                } else {
                                 DetailContent(
                                     activity = activity,
                                     vm = vm,
@@ -326,6 +330,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                                     onPosterPic = { backdropPic = it },
                                     onSeed = { argb -> if (argb != null) backdropSeed = argb },
                                 )
+                                }
                             }
                         }
                     }

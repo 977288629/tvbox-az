@@ -46,4 +46,6 @@ interface VodControlListener {
     fun onM3u8ProxyUrl(proxyUrl: String, sourceUrl: String)
 
     fun clickCast()
+
+    fun onPipRequested() {}
 }

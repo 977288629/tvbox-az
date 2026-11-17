@@ -19,4 +19,6 @@ interface PageHost {
     fun showEpisodeSheet()
 
     fun onPlaybackLinesExhausted(): Boolean
+
+    fun onPipRequested() {}
 }

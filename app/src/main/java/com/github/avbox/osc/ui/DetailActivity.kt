@@ -7,6 +7,8 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.Looper
 import android.webkit.WebView
+import android.app.PictureInPictureParams
+import android.util.Rational
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import com.github.avbox.osc.ui.theme.enableTransparentEdgeToEdge
@@ -40,6 +42,35 @@ import kotlinx.coroutines.launch
 private const val SYSBAR_APPEARANCE_REASSERT_DELAY_MS = 400L
 
 class DetailActivity : BaseActivity(), PageHost {
+
+    internal val pipMode = androidx.compose.runtime.mutableStateOf(false)
+
+    override fun onUserLeaveHint() {
+        if (vm.fullScreen.value && playContainer?.isPlaybackActive() == true) {
+            enterPip()
+            return
+        }
+        super.onUserLeaveHint()
+    }
+
+    fun enterPip() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) return
+        if (!vm.fullScreen.value) return
+        val params = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+            .build()
+        try {
+            enterPictureInPictureMode(params)
+        } catch (e: IllegalStateException) {
+            AppLog.e("DetailActivity", e)
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPip: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPip, newConfig)
+        pipMode.value = isInPip
+        if (!isInPip) applyStatusBarAppearance()
+    }
 
     private val vm: DetailViewModel by lazy {
         ViewModelProvider(this)[DetailViewModel::class.java]
@@ -196,6 +227,10 @@ class DetailActivity : BaseActivity(), PageHost {
     }
 
     override fun onPlaybackLinesExhausted(): Boolean = startDetailFallbackAfterLinesExhausted()
+
+    override fun onPipRequested() {
+        enterPip()
+    }
 
     override fun showEpisodeSheet() {
         if (vm.vodInfo != null) vm.showEpisodeSheet()

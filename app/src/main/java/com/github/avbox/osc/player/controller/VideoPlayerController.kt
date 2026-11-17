@@ -197,6 +197,16 @@ class VideoPlayerController(
 
     internal var listener: VodControlListener? = null
 
+    internal var onPipRequested: (() -> Unit)? = null
+
+    fun requestEnterPip() {
+        if (onPipRequested != null) {
+            onPipRequested?.invoke()
+            return
+        }
+        listener?.onPipRequested()
+    }
+
     internal val uiHandler by lazy { Handler(Looper.getMainLooper()) }
 
     private var progressTicking = false

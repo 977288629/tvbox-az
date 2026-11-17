@@ -136,6 +136,7 @@ internal class PlayerConfigDelegate(private val host: VideoPlayerController) {
             } else {
                 null
             },
+            onPipClicked = { host.requestEnterPip() },
         )
     }
 

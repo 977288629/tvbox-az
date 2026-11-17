@@ -21,6 +21,33 @@ import java.io.File
 
 class LocalPlayActivity : BaseActivity(), PageHost {
 
+    private val pipMode = androidx.compose.runtime.mutableStateOf(false)
+
+    override fun onUserLeaveHint() {
+        if (container?.isPlaybackActive() == true) {
+            enterPip()
+            return
+        }
+        super.onUserLeaveHint()
+    }
+
+    private fun enterPip() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) return
+        val params = android.app.PictureInPictureParams.Builder()
+            .setAspectRatio(android.util.Rational(16, 9))
+            .build()
+        try {
+            enterPictureInPictureMode(params)
+        } catch (e: IllegalStateException) {
+            android.util.Log.e("LocalPlayActivity", e.message ?: "pip failed")
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPip: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPip, newConfig)
+        pipMode.value = isInPip
+    }
+
     private var container: PlayContainer? = null
 
     companion object {
