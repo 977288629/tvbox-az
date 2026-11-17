@@ -18,6 +18,8 @@ interface RemoteHistoryPort {
     fun recent(limit: Int): List<RemoteHistoryItem>
 
     fun playRecord(sourceKey: String, vodId: String): Boolean
+
+    fun pushSearch(text: String): Boolean
 }
 
 object RemoteHistoryPorts {

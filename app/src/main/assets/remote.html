@@ -84,6 +84,19 @@ input[type=range]::-webkit-slider-thumb {
 .hist-bar { height: 3px; background: #34383f; border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .hist-bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
 .hist-empty { font-size: 12px; color: var(--sub); text-align: center; padding: 8px 0; }
+.push-row { display: flex; gap: 8px; }
+.push-row input {
+  flex: 1; min-width: 0; background: var(--card-2); border: 1px solid transparent; border-radius: 12px;
+  padding: 10px 14px; font-size: 14px; color: var(--text); outline: none;
+}
+.push-row input:focus { border-color: var(--accent); }
+.push-row input::placeholder { color: #6a707a; }
+.push-btn {
+  flex: 0 0 auto; border: 0; background: var(--accent); color: #fff; border-radius: 12px;
+  padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.push-btn:active { opacity: .85; }
+.push-tip { font-size: 11px; color: var(--sub); margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -142,6 +155,15 @@ input[type=range]::-webkit-slider-thumb {
     <div class="hist-list" id="histList"></div>
     <div class="hist-empty" id="histEmpty">暂无观看记录</div>
   </div>
+
+  <div class="card" id="pushCard">
+    <div class="sec-title">推送</div>
+    <div class="push-row">
+      <input type="text" id="pushInput" placeholder="输入片名搜索 / http 直链播放" autocomplete="off">
+      <button class="push-btn" id="pushBtn">推送</button>
+    </div>
+    <div class="push-tip" id="pushTip"></div>
+  </div>
 </div>
 
 <script>
@@ -162,6 +184,42 @@ input[type=range]::-webkit-slider-thumb {
   var elVolCard = $('volCard'), elVol = $('vol'), elVolText = $('volText'), elMute = $('btnMute');
   var elEpCard = $('epCard'), elEpChips = $('epChips');
   var elHistCard = $('histCard'), elHistList = $('histList'), elHistEmpty = $('histEmpty');
+  var elPushInput = $('pushInput'), elPushBtn = $('pushBtn'), elPushTip = $('pushTip');
+  var pushTipTimer = null;
+
+  function showPushTip(text, good) {
+    elPushTip.textContent = text;
+    elPushTip.style.color = good ? '#4ade80' : 'var(--danger)';
+    if (pushTipTimer) clearTimeout(pushTipTimer);
+    pushTipTimer = setTimeout(function () { elPushTip.textContent = ''; }, 3000);
+  }
+
+  function doPush() {
+    var text = (elPushInput.value || '').trim();
+    if (!text) {
+      showPushTip('请输入片名或直链', false);
+      return;
+    }
+    elPushBtn.disabled = true;
+    api({ action: 'pushSearch', text: text }).then(function (res) {
+      elPushBtn.disabled = false;
+      if (res && res.code === 0) {
+        showPushTip('已推送到设备 ✓', true);
+        elPushInput.value = '';
+        fetchHistory();
+      } else {
+        showPushTip((res && res.msg) || '推送失败', false);
+      }
+    }).catch(function () {
+      elPushBtn.disabled = false;
+      showPushTip('网络错误', false);
+    });
+  }
+
+  elPushBtn.addEventListener('click', doPush);
+  elPushInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); doPush(); }
+  });
 
   function fmt(sec) {
     sec = Math.max(0, Math.floor(sec));

@@ -232,7 +232,7 @@ class PlaybackStarter(private val host: Host) {
         }
 
         if (host.preloadConsumeResult(host.progressKey())) return
-        if (isLocalFileUrl(seriesUrl)) {
+        if (isLocalFileUrl(seriesUrl) || isSourcelessHttpUrl(seriesUrl)) {
             AppLog.i("echo-play-local:" + seriesUrl)
             goPlayUrl(seriesUrl, null)
             return
@@ -245,6 +245,11 @@ class PlaybackStarter(private val host: Host) {
 
     private fun isLocalFileUrl(url: String): Boolean =
         url.startsWith("file://") || url.startsWith("content://")
+
+    private fun isSourcelessHttpUrl(url: String): Boolean {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return false
+        return host.sourceKey().isEmpty()
+    }
 
     private fun isIdleKernelReusable(kernelPresent: Boolean): Boolean {
         if (!kernelPresent) return false

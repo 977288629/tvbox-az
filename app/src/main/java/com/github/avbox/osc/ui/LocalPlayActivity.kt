@@ -51,9 +51,9 @@ class LocalPlayActivity : BaseActivity(), PageHost {
     private var container: PlayContainer? = null
 
     companion object {
-        private const val EXTRA_PATH = "path"
-        private const val EXTRA_NAME = "name"
-        private const val EXTRA_SOURCE = "sourceKey"
+        internal const val EXTRA_PATH = "path"
+        internal const val EXTRA_NAME = "name"
+        internal const val EXTRA_SOURCE = "sourceKey"
 
         fun start(context: Context, path: String, name: String, sourceKey: String) {
             context.startActivity(
@@ -72,14 +72,6 @@ class LocalPlayActivity : BaseActivity(), PageHost {
 
     override fun init() {
         enableTransparentEdgeToEdge()
-        val path = intent.getStringExtra(EXTRA_PATH).orEmpty()
-        val name = intent.getStringExtra(EXTRA_NAME).orEmpty()
-        val sourceKey = intent.getStringExtra(EXTRA_SOURCE).orEmpty()
-        if (path.isEmpty() || !File(path).exists()) {
-            toast(getString(R.string.download_file_missing))
-            finish()
-            return
-        }
         val c = PlayContainer(this).also { it.pageHostRef = this }
         container = c
         findViewById<ComposeView>(R.id.compose_view).setContent {
@@ -87,7 +79,26 @@ class LocalPlayActivity : BaseActivity(), PageHost {
                 AndroidView(factory = { c }, modifier = Modifier.fillMaxSize())
             }
         }
-        val uri = Uri.fromFile(File(path)).toString()
+        applyPlaybackFromIntent()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        applyPlaybackFromIntent()
+    }
+
+    private fun applyPlaybackFromIntent() {
+        val path = intent.getStringExtra(EXTRA_PATH).orEmpty()
+        val name = intent.getStringExtra(EXTRA_NAME).orEmpty()
+        val sourceKey = intent.getStringExtra(EXTRA_SOURCE).orEmpty()
+        val networkUrl = path.startsWith("http://") || path.startsWith("https://")
+        if (path.isEmpty() || (!networkUrl && !File(path).exists())) {
+            toast(getString(R.string.download_file_missing))
+            finish()
+            return
+        }
+        val uri = if (networkUrl) path else Uri.fromFile(File(path)).toString()
         val flag = "local"
         val title = name.ifEmpty { File(path).name }
         val vod = VodInfo(
@@ -101,7 +112,7 @@ class LocalPlayActivity : BaseActivity(), PageHost {
                 flag to mutableListOf(VodInfo.VodSeries(title, uri)),
             ),
         )
-        c.setData(PlaybackSession(vod, sourceKey, false))
+        container?.setData(PlaybackSession(vod, sourceKey, false))
     }
 
     override fun context(): Context = this

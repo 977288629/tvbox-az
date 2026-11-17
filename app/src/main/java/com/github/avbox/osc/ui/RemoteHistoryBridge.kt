@@ -54,6 +54,34 @@ class RemoteHistoryBridge : RemoteHistoryPort {
         }
     }
 
+    override fun pushSearch(text: String): Boolean {
+        val query = text.trim()
+        if (query.isEmpty()) return false
+        val context = AppContextHolder.context() ?: return false
+        return try {
+            if (query.startsWith("http://") || query.startsWith("https://")) {
+                val playIntent = Intent(context, LocalPlayActivity::class.java)
+                    .putExtra(LocalPlayActivity.EXTRA_PATH, query)
+                    .putExtra(LocalPlayActivity.EXTRA_NAME, query.substringAfterLast('/'))
+                    .putExtra(LocalPlayActivity.EXTRA_SOURCE, "")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                context.startActivity(playIntent)
+            } else {
+                val bundle = Bundle()
+                bundle.putString("title", query)
+                context.startActivity(
+                    Intent(context, SearchActivity::class.java)
+                        .putExtras(bundle)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                )
+            }
+            true
+        } catch (th: Throwable) {
+            AppLog.e(TAG + " pushSearch failed: " + th.message)
+            false
+        }
+    }
+
     private fun toItem(vod: VodInfo, percents: Map<String, Int>): RemoteHistoryItem? {
         val id = vod.id ?: return null
         val series = vod.seriesMap?.get(vod.playFlag)

@@ -54,6 +54,9 @@ class RemoteControlProcess(private val hostContext: Context) : RequestProcess {
                 params?.get("sourceKey").orEmpty(),
                 params?.get("vodId").orEmpty(),
             )
+        } else if (action == "pushSearch") {
+            val ok = RemoteHistoryPorts.port?.pushSearch(params?.get("text").orEmpty()) ?: false
+            if (!ok) return jsonOk(errorBody("device not ready"))
         } else if (action != "get") {
             if (port == null) return jsonOk(errorBody("engine not ready"))
             dispatch(port, action, params)
