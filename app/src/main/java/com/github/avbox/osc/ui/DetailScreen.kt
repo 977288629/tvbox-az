@@ -301,9 +301,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                 if (!fullBox || exitingFullscreen) {
                     when (val state = pageState) {
                         is DetailViewModel.PageState.Loading -> {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                ContainedLoadingIndicator(Modifier.size(64.dp))
-                            }
+                            DetailSkeleton(modifier = Modifier.fillMaxSize())
                         }
 
                         is DetailViewModel.PageState.Empty -> {
