@@ -49,6 +49,13 @@ abstract class BaseActivity : AppCompatActivity(), CustomAdapt {
 
     private var orientationPolicy = Int.MIN_VALUE
 
+    private var swipeBackHelper: SwipeBackGestureHelper? = null
+
+    /**
+     * 右滑返回开关: 主页默认关, 二级页默认开; 需要屏蔽的页面覆写返回 false。
+     */
+    protected open fun enableSwipeBack(): Boolean = true
+
     private val refreshAutoSizeRunnable = Runnable {
         if (shouldRefreshAutoSize()) {
             refreshAutoSize()
@@ -92,6 +99,10 @@ abstract class BaseActivity : AppCompatActivity(), CustomAdapt {
         ActivityStack.getInstance().addActivity(this)
         applyOrientationPolicy()
         init()
+        if (enableSwipeBack()) {
+            swipeBackHelper = SwipeBackGestureHelper(this) { runOnUiThread { onBackPressedDispatcher.onBackPressed() } }
+            swipeBackHelper?.attach()
+        }
     }
 
     override fun onResume() {
@@ -267,6 +278,8 @@ abstract class BaseActivity : AppCompatActivity(), CustomAdapt {
     protected abstract fun init()
 
     override fun onDestroy() {
+        swipeBackHelper?.detach()
+        swipeBackHelper = null
         super.onDestroy()
         ActivityStack.getInstance().finishActivity(this)
     }

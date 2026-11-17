@@ -17,6 +17,8 @@ private const val PREWARM_ON_RESUME_DELAY_MS = 2000L
 
 class MainActivity : BaseActivity() {
 
+    override fun enableSwipeBack(): Boolean = false
+
     override fun shouldRefreshAutoSize(): Boolean = true
 
     override fun hideSysBar() {
