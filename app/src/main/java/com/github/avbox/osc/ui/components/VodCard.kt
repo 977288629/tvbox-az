@@ -3,6 +3,8 @@ package com.github.avbox.osc.ui.components
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,11 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -202,23 +206,45 @@ private fun RowCard(
         ) {
             Box(
                 modifier = Modifier
-                    .width(96.dp)
-                    .height(136.dp)
+                    .width(104.dp)
+                    .height(148.dp)
                     .clip(PosterShape),
             ) {
                 VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
                 RatingBadge(video, Modifier.align(Alignment.BottomStart))
             }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.width(14.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Text(
                     text = video.name.orEmpty(),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                val score = ratingBadgeText(video.note)
+                if (score != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 6.dp),
+                    ) {
+                        Text(
+                            text = "★",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp,
+                        )
+                        Text(
+                            text = score,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+                }
                 val meta = metaText(video)
                 if (meta.isNotEmpty()) {
                     Text(
@@ -227,7 +253,7 @@ private fun RowCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
                 val summary = video.des?.let {
@@ -269,7 +295,7 @@ private fun RowCard(
                     )
                 }
                 val note = video.note
-                if (!note.isNullOrBlank()) {
+                if (!note.isNullOrBlank() && score == null && note.trim().toFloatOrNull()?.let { it != 0f } != false) {
                     Text(
                         text = note,
                         style = MaterialTheme.typography.labelSmall,
