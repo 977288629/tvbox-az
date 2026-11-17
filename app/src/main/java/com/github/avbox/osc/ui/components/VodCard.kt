@@ -273,57 +273,74 @@ private fun WideCard(
     onLongClick: () -> Unit,
     modifier: Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        PressableCard(
-            onClick = onClick,
-            onLongClick = onLongClick,
-            shape = PosterShape,
-        ) {
-            Box(modifier = Modifier.aspectRatio(5f / 3f)) {
-                VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
+    // 文字叠加在 5:3 图底部渐变上, 避免首页底部悬浮导航栏遮住下方文字行。
+    PressableCard(
+        onClick = onClick,
+        onLongClick = onLongClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = PosterShape,
+    ) {
+        Box(modifier = Modifier.aspectRatio(5f / 3f)) {
+            VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.45f to Color.Transparent,
+                            0.75f to Color.Black.copy(alpha = 0.5f),
+                            1f to Color.Black.copy(alpha = 0.9f),
+                        )
+                    ),
+            )
+            Text(
+                text = "NEW", // i18n: keep(样式角标沿用源数据通用标记)
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .clip(BadgeShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+            RatingBadge(video, Modifier.align(Alignment.TopStart))
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                    .fillMaxWidth(),
+            ) {
                 Text(
-                    text = "NEW", // i18n: keep(样式角标沿用源数据通用标记)
-                    style = MaterialTheme.typography.labelSmall,
+                    text = video.name.orEmpty(),
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .clip(BadgeShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                RatingBadge(video, Modifier.align(Alignment.TopStart))
+                val meta = metaText(video)
+                if (meta.isNotEmpty()) {
+                    Text(
+                        text = meta,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                val note = video.note
+                if (!note.isNullOrBlank()) {
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
-        }
-        Text(
-            text = video.name.orEmpty(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        val meta = metaText(video)
-        if (meta.isNotEmpty()) {
-            Text(
-                text = meta,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        val note = video.note
-        if (!note.isNullOrBlank()) {
-            Text(
-                text = note,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
         }
     }
 }

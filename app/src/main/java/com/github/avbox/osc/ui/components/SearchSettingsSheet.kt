@@ -1,5 +1,11 @@
 package com.github.avbox.osc.ui.components
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -110,22 +116,27 @@ fun SearchSettingsSheet(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
             )
             val cardStyle = UiSettingsState.config.vodCardStyle
-            CapsuleSegmentedButton(
-                options = VodCardStyle.entries.map { style ->
-                    SegmentOption(
-                        label = stringResource(style.labelRes),
-                        value = style,
-                        iconPainter = painterResource(style.iconRes),
-                    )
-                },
-                selectedValue = cardStyle,
-                onOptionSelected = { UiSettingsState.vodCardStyle = it },
-                style = SegmentStyle.Track,
-                containerColor = MaterialTheme.colorScheme.surfaceBright,
+            // 2x2 网格: 每项约半屏宽, 保证「图标 + 四字样式名」完整显示(Track 分段每项仅 80dp 会截断成 ...)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-            )
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                VodCardStyle.entries.chunked(2).forEach { rowStyles ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowStyles.forEach { style ->
+                            CardStyleOption(
+                                style = style,
+                                selected = cardStyle == style,
+                                onClick = { UiSettingsState.vodCardStyle = style },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (rowStyles.size < 2) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
         },
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -272,6 +283,57 @@ private fun SourceCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CardStyleOption(
+    style: VodCardStyle,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val container = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceBright
+    }
+    val contentColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(container)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(style.iconRes),
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = stringResource(style.labelRes),
+            style = MaterialTheme.typography.labelLarge,
+            color = contentColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
