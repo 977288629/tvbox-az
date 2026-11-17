@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>AVBox 网页遥控</title>
+<style>
+:root {
+  --bg: #0e1013;
+  --card: #191c22;
+  --card-2: #22262e;
+  --text: #e8eaed;
+  --sub: #9aa0a8;
+  --accent: #7c6cf2;
+  --accent-soft: rgba(124, 108, 242, .16);
+  --danger: #f26c6c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+body { max-width: 520px; margin: 0 auto; padding: 16px 14px 40px; }
+.wrap { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; }
+.logo .dot { width: 9px; height: 9px; border-radius: 50%; background: #54585f; }
+.logo .dot.on { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, .7); }
+#netState { font-size: 12px; color: var(--sub); }
+
+.card { background: var(--card); border-radius: 16px; padding: 16px; }
+.np { min-height: 76px; }
+.np.empty { display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 14px; }
+#title { font-size: 16px; font-weight: 600; line-height: 1.4; word-break: break-all; }
+.meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { font-size: 12px; color: var(--sub); background: var(--card-2); border-radius: 999px; padding: 3px 10px; }
+#playState { color: var(--accent); }
+
+.progress-row { margin-top: 14px; }
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 5px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--fill, 0%), #34383f var(--fill, 0%));
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  margin-top: -6.5px; box-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+.time-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.transport { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+.tbtn {
+  border: 0; background: var(--card-2); color: var(--text); border-radius: 12px; padding: 11px 0;
+  font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.tbtn:active { background: var(--accent-soft); color: var(--accent); }
+.tbtn.main { background: var(--accent); color: #fff; }
+.tbtn.main:active { background: var(--accent); opacity: .85; }
+
+.sec-title { font-size: 13px; color: var(--sub); margin: 4px 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid transparent; background: var(--card-2); color: var(--text); border-radius: 10px;
+  padding: 7px 14px; font-size: 13px; cursor: pointer;
+}
+.chip.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+.vol-row { display: flex; align-items: center; gap: 10px; }
+.vol-row input[type=range] { flex: 1; }
+.mute-btn {
+  flex: 0 0 auto; border: 0; background: var(--card-2); color: var(--text);
+  border-radius: 12px; padding: 10px 14px; font-size: 15px; cursor: pointer;
+}
+.mute-btn.active { color: var(--danger); }
+
+.episodes { max-height: 300px; overflow-y: auto; }
+.episodes .chip { min-width: 44px; text-align: center; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="dot" id="netDot"></span>AVBox 网页遥控</div>
+    <div id="netState">连接中…</div>
+  </header>
+
+  <div class="card np empty" id="np">
+    <div id="npEmpty">当前没有正在播放的内容</div>
+    <div id="npFull" class="hidden" style="width:100%">
+      <div id="title"></div>
+      <div class="meta">
+        <span class="pill" id="flagPill"></span>
+        <span class="pill" id="epPill"></span>
+        <span class="pill" id="playState"></span>
+      </div>
+      <div class="progress-row">
+        <input type="range" id="seek" min="0" max="100" step="1" value="0">
+        <div class="time-row"><span id="tPos">00:00</span><span id="tDur">00:00</span></div>
+      </div>
+      <div class="transport">
+        <button class="tbtn" data-cmd="prev" title="上一集">⏮</button>
+        <button class="tbtn" data-seek="-60">-60s</button>
+        <button class="tbtn" data-seek="-15">-15s</button>
+        <button class="tbtn main" id="btnToggle" data-cmd="toggle">⏸</button>
+        <button class="tbtn" data-seek="15">+15s</button>
+        <button class="tbtn" data-seek="60">+60s</button>
+        <button class="tbtn" data-cmd="next" title="下一集">⏭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="speedCard">
+    <div class="sec-title">倍速</div>
+    <div class="chips" id="speedChips"></div>
+  </div>
+
+  <div class="card hidden" id="volCard">
+    <div class="sec-title">音量</div>
+    <div class="vol-row">
+      <button class="mute-btn" id="btnMute">🔊</button>
+      <input type="range" id="vol" min="0" max="100" step="1" value="100">
+      <span id="volText" style="font-size:12px;color:var(--sub);width:34px;text-align:right;font-variant-numeric:tabular-nums">100</span>
+    </div>
+  </div>
+
+  <div class="card hidden" id="epCard">
+    <div class="sec-title">选集</div>
+    <div class="chips episodes" id="epChips"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var SPEEDS = [0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
+  var state = null;
+  var dragging = false;
+  var draggingVol = false;
+  var lastVolume = -1;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var elDot = $('netDot'), elNet = $('netState');
+  var elNp = $('np'), elNpEmpty = $('npEmpty'), elNpFull = $('npFull');
+  var elTitle = $('title'), elFlag = $('flagPill'), elEp = $('epPill'), elSt = $('playState');
+  var elSeek = $('seek'), elTPos = $('tPos'), elTDur = $('tDur');
+  var elToggle = $('btnToggle');
+  var elSpeedCard = $('speedCard'), elSpeedChips = $('speedChips');
+  var elVolCard = $('volCard'), elVol = $('vol'), elVolText = $('volText'), elMute = $('btnMute');
+  var elEpCard = $('epCard'), elEpChips = $('epChips');
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    return (h > 0 ? h + ':' : '') + two(m) + ':' + two(s);
+  }
+
+  function api(params) {
+    return fetch('/api?' + new URLSearchParams(params)).then(function (r) { return r.json(); });
+  }
+
+  function send(cmd) {
+    return api(cmd).then(function (res) {
+      if (res && res.data) applyState(res.data);
+    }).catch(function () {});
+  }
+
+  function applyState(d) {
+    state = d;
+    var online = true;
+    elDot.classList.add('on');
+    elNet.textContent = '已连接';
+    elNp.classList.remove('empty');
+    elNpEmpty.classList.add('hidden');
+    elNpFull.classList.remove('hidden');
+
+    elTitle.textContent = d.title || '';
+    elFlag.textContent = '线路：' + (d.flag || '默认');
+    elEp.textContent = (d.episode || '') + (d.episodes && d.episodes.length > 1 ? ' (' + (d.index + 1) + '/' + d.episodes.length + ')' : '');
+    elSt.textContent = d.playing ? '播放中' : '已暂停';
+    elToggle.textContent = d.playing ? '⏸' : '▶';
+
+    var dur = Math.max(0, d.durationMs / 1000);
+    elSeek.max = Math.floor(dur);
+    if (!dragging) {
+      var pos = Math.min(Math.max(0, d.positionMs / 1000), dur);
+      elSeek.value = Math.floor(pos);
+      var pct = dur > 0 ? (pos / dur * 100) : 0;
+      elSeek.style.setProperty('--fill', pct + '%');
+    }
+    elTPos.textContent = fmt(d.positionMs / 1000);
+    elTDur.textContent = fmt(dur);
+
+    elSpeedCard.classList.remove('hidden');
+    renderSpeed(d.speed);
+    elVolCard.classList.remove('hidden');
+    if (!draggingVol) {
+      elVol.value = d.volume;
+      elVolText.textContent = d.volume;
+    }
+    elMute.classList.toggle('active', !!d.muted);
+    elMute.textContent = d.muted ? '🔇' : '🔊';
+
+    var eps = d.episodes || [];
+    if (eps.length > 1) {
+      elEpCard.classList.remove('hidden');
+      renderEpisodes(eps, d.index);
+    } else {
+      elEpCard.classList.add('hidden');
+    }
+  }
+
+  function renderSpeed(speed) {
+    if (!elSpeedChips.childNodes.length) {
+      SPEEDS.forEach(function (v) {
+        var b = document.createElement('button');
+        b.className = 'chip';
+        b.textContent = v + 'x';
+        b.dataset.v = v;
+        b.onclick = function () { send({ action: 'speed', value: v }); };
+        elSpeedChips.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(elSpeedChips.children, function (b) {
+      b.classList.toggle('active', Math.abs(parseFloat(b.dataset.v) - speed) < 0.01);
+    });
+  }
+
+  var renderedEpisodes = [];
+  var renderedIndex = -2;
+  function renderEpisodes(eps, index) {
+    if (renderedEpisodes === eps && renderedIndex === index) return;
+    if (renderedEpisodes !== eps) {
+      renderedEpisodes = eps;
+      elEpChips.innerHTML = '';
+      eps.forEach(function (name, i) {
+        var b = document.createElement('button');
+        b.className = 'chip';
+        b.textContent = name;
+        b.dataset.i = i;
+        b.onclick = function () { send({ action: 'play', index: i }); };
+        elEpChips.appendChild(b);
+      });
+      var current = elEpChips.children[index];
+      if (current) current.scrollIntoView({ block: 'nearest' });
+    }
+    renderedIndex = index;
+    Array.prototype.forEach.call(elEpChips.children, function (b) {
+      b.classList.toggle('active', parseInt(b.dataset.i, 10) === index);
+    });
+  }
+
+  function markOffline() {
+    elDot.classList.remove('on');
+    elNet.textContent = '未连接';
+  }
+
+  function poll() {
+    if (document.hidden) return;
+    api({ action: 'get' }).then(function (res) {
+      if (res && res.data) {
+        applyState(res.data);
+      } else {
+        state = null;
+        elDot.classList.add('on');
+        elNet.textContent = '已连接';
+        elNp.classList.add('empty');
+        elNpEmpty.classList.remove('hidden');
+        elNpFull.classList.add('hidden');
+        elSpeedCard.classList.add('hidden');
+        elVolCard.classList.add('hidden');
+        elEpCard.classList.add('hidden');
+        renderedEpisodes = [];
+        renderedIndex = -2;
+      }
+    }).catch(markOffline);
+  }
+
+  elSeek.addEventListener('input', function () {
+    dragging = true;
+    var max = parseFloat(elSeek.max) || 0;
+    elSeek.style.setProperty('--fill', (max > 0 ? elSeek.value / max * 100 : 0) + '%');
+    elTPos.textContent = fmt(elSeek.value);
+  });
+  elSeek.addEventListener('change', function () {
+    dragging = false;
+    send({ action: 'seek', pos: Math.floor(parseFloat(elSeek.value) * 1000) });
+  });
+
+  elVol.addEventListener('input', function () {
+    draggingVol = true;
+    elVolText.textContent = elVol.value;
+  });
+  elVol.addEventListener('change', function () {
+    draggingVol = false;
+    send({ action: 'vol', value: parseInt(elVol.value, 10) });
+  });
+  elMute.addEventListener('click', function () { send({ action: 'mute' }); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cmd]'), function (b) {
+    b.addEventListener('click', function () { send({ action: b.dataset.cmd }); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-seek]'), function (b) {
+    b.addEventListener('click', function () {
+      var delta = parseInt(b.dataset.seek, 10) * 1000;
+      var base = state ? state.positionMs : 0;
+      send({ action: 'seek', pos: Math.max(0, base + delta) });
+    });
+  });
+
+  setInterval(poll, 1000);
+  poll();
+})();
+</script>
+</body>
+</html>

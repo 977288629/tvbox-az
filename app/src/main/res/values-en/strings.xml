@@ -688,4 +688,9 @@
     <string name="scan_qr_hint">Point at a QR code to import</string>
     <string name="config_scan_qr">Scan QR</string>
     <string name="player_pip_enter">Picture-in-picture</string>
+    <string name="settings_remote_title">Web Remote</string>
+    <string name="settings_remote_subtitle">Open in a browser on the same Wi-Fi to control playback</string>
+    <string name="settings_remote_dialog_copy">Copy address</string>
+    <string name="settings_remote_copied">Remote address copied</string>
+    <string name="settings_remote_empty">Address not ready, try again later</string>
 </resources>

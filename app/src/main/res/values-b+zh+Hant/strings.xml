@@ -688,4 +688,9 @@
     <string name="scan_qr_hint">對準二維碼即可自動導入</string>
     <string name="config_scan_qr">掃碼導入</string>
     <string name="player_pip_enter">畫中畫</string>
+    <string name="settings_remote_title">網頁遙控</string>
+    <string name="settings_remote_subtitle">同一 Wi-Fi 下用瀏覽器打開並控制播放</string>
+    <string name="settings_remote_dialog_copy">複製地址</string>
+    <string name="settings_remote_copied">已複製遙控地址</string>
+    <string name="settings_remote_empty">暫未獲取到地址，請稍後重試</string>
 </resources>

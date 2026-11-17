@@ -205,6 +205,9 @@ class ExoPlayer(context: Context) : KernelPlayer(), PictureEffectHost {
         engine?.setVolume(leftVolume, rightVolume)
     }
 
+    override val volume: Float
+        get() = engine?.player?.volume ?: 1f
+
     override fun setLooping(isLooping: Boolean) {
         engine?.setLooping(isLooping)
     }

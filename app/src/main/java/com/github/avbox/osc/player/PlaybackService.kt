@@ -29,6 +29,7 @@ import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.VodInfo
 import com.github.avbox.osc.data.PlaybackDataPorts
 import com.github.avbox.osc.data.PlaybackPorts
+import com.github.avbox.osc.data.RemoteControlPorts
 import com.github.avbox.osc.io.FileUtils
 import com.github.avbox.osc.player.engine.PlayerCache
 import com.github.avbox.osc.util.KVKeys
@@ -497,7 +498,7 @@ class PlaybackService : Service() {
             if (current == null) {
                 current = PlaybackEngine(app)
                 engine = current
-                installDataPorts()
+                installDataPorts(app)
             }
             startHost(app, null)
             return current
@@ -506,7 +507,7 @@ class PlaybackService : Service() {
         @JvmStatic
         fun peek(): PlaybackEngine? = engine
 
-        private fun installDataPorts() {
+        private fun installDataPorts(app: Context) {
             if (PlaybackPorts.ports == null) {
                 PlaybackPorts.ports = object : PlaybackDataPorts {
                     override fun currentVod(): VodInfo? = peek()?.controller()?.vod()
@@ -519,6 +520,9 @@ class PlaybackService : Service() {
                         peek()?.markZeroStartKeys(keys)
                     }
                 }
+            }
+            if (RemoteControlPorts.port == null) {
+                RemoteControlPorts.port = RemoteControlBridge()
             }
         }
 
@@ -549,7 +553,7 @@ class PlaybackService : Service() {
                 if (current == null) {
                     current = PlaybackEngine(app)
                     engine = current
-                    installDataPorts()
+                    installDataPorts(app)
                 }
                 current.onPrewarmPreferenceChanged(true)
             } catch (th: Throwable) {

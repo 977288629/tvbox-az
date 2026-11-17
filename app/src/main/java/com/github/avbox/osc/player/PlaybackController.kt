@@ -703,6 +703,18 @@ class PlaybackController {
         play(false)
     }
 
+    fun playEpisodeAt(index: Int) {
+        val currentVod = vod() ?: return
+        val episodes = currentVod.seriesMap?.get(currentVod.playFlag) ?: return
+        if (index < 0 || index >= episodes.size) return
+        st = st.consumeSkipEnd()
+        clearTriedLines()
+        updateSelection(currentVod.playFlag, index)
+        setUserPickedLine(false)
+        setReusePlayerOnSwitch(true)
+        play(false)
+    }
+
     fun onNearEndProgress(positionMs: Long, durationMs: Long) {
         if (!st.skipEndPending) return
         val et = playerCfg?.optInt("et", 0) ?: 0

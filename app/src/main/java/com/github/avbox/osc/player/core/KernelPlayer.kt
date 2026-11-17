@@ -98,6 +98,9 @@ abstract class KernelPlayer {
 
     abstract val speed: Float
 
+    open val volume: Float
+        get() = 1f
+
     abstract val tcpSpeed: Long
 
     companion object {

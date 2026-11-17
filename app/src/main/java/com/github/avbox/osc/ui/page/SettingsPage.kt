@@ -2,6 +2,8 @@
 
 package com.github.avbox.osc.ui.page
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -43,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
 import com.github.avbox.osc.io.FileUtils
 import com.github.avbox.osc.net.HttpClients
+import com.github.avbox.osc.server.ControlManager
 import com.github.avbox.osc.ui.ConfigManageActivity
 import com.github.avbox.osc.ui.DownloadActivity
 import com.github.avbox.osc.ui.PlaySettingsActivity
@@ -71,6 +74,7 @@ private const val CACHE_SIZE_REFRESH_MIN_INTERVAL_MS = 60_000L
 
 data class SettingsState(
     val cacheSizeText: String = "",
+    val remoteAddress: String = "",
 )
 
 class SettingsViewModel : ViewModel() {
@@ -133,6 +137,7 @@ class SettingsViewModel : ViewModel() {
 
     private fun loadState(): SettingsState = SettingsState(
         cacheSizeText = cacheSizeText,
+        remoteAddress = ControlManager.get().getAddress(false) + "remote",
     )
 }
 
@@ -215,6 +220,55 @@ fun SettingsPage(
                         iconRes = R.drawable.ic_settings_preference,
                         onClick = { PreferenceSettingsActivity.start(context) },
                     )
+                }
+            }
+
+            SettingsGroup(title = null) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
+                    var showRemoteDialog by rememberSaveable { mutableStateOf(false) }
+                    SettingsRow(
+                        title = stringResource(R.string.settings_remote_title),
+                        subtitle = stringResource(R.string.settings_remote_subtitle),
+                        iconRes = R.drawable.ic_detail_cast,
+                        onClick = { showRemoteDialog = true },
+                    )
+                    if (showRemoteDialog) {
+                        AVBoxAlertDialog(
+                            onDismissRequest = { showRemoteDialog = false },
+                            title = { Text(stringResource(R.string.settings_remote_title)) },
+                            text = {
+                                Text(
+                                    text = state.remoteAddress.ifEmpty {
+                                        stringResource(R.string.settings_remote_empty)
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showRemoteDialog = false }) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val address = state.remoteAddress
+                                    if (address.isNotEmpty()) {
+                                        val clipboard =
+                                            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("avbox_remote", address))
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.settings_remote_copied),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }) {
+                                    Text(stringResource(R.string.settings_remote_dialog_copy))
+                                }
+                            },
+                        )
+                    }
                 }
             }
 
