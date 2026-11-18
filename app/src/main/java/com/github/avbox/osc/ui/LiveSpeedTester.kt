@@ -17,14 +17,14 @@ internal object LiveSpeedTester {
 
     private const val PROBE_TIMEOUT_MS = 4000L
 
-    internal suspend fun probe(url: String, headers: Map<String, String>): Int = withContext(Dispatchers.IO) {
+    internal suspend fun probe(url: String, headers: Map<String, String>?): Int = withContext(Dispatchers.IO) {
         val lower = url.trim().lowercase()
         if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
             return@withContext RESULT_UNSUPPORTED
         }
         val base = HttpClients.defaultClient ?: return@withContext RESULT_FAILED
         val builder = Request.Builder().url(url).get()
-        for ((key, value) in headers) builder.header(key, value)
+        for ((key, value) in headers.orEmpty()) builder.header(key, value)
         val start = System.currentTimeMillis()
         try {
             val client = base.newBuilder()

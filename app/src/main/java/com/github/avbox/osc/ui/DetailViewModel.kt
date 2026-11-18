@@ -24,6 +24,7 @@ import com.github.avbox.osc.player.PlaybackService
 import com.github.avbox.osc.player.PlaybackSession
 import com.github.avbox.osc.sourcedata.SourceViewModel
 import com.github.avbox.osc.util.AppContextHolder
+import com.github.avbox.osc.util.DefaultConfig
 import com.github.avbox.osc.api.TmdbApi
 import com.github.avbox.osc.api.TmdbPoster
 import com.github.avbox.osc.bean.TmdbDetail
@@ -386,6 +387,47 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     var vodId = ""; private set
     var sourceKey = ""; private set
     var firstsourceKey = ""; private set
+
+    private val _lineSpeeds = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val lineSpeeds: StateFlow<Map<String, Int>> = _lineSpeeds.asStateFlow()
+    private var lineSpeedCheckKey: String? = null
+
+    fun requestLineSpeedCheck(
+        flags: List<VodInfo.VodSeriesFlag>,
+        seriesMap: LinkedHashMap<String?, MutableList<VodInfo.VodSeries>>?,
+    ) {
+        if (flags.isEmpty()) return
+        val checkKey = flags.joinToString("|") { it.name.orEmpty() }
+        if (lineSpeedCheckKey == checkKey) {
+            com.github.avbox.osc.util.AppLog.i("echo-line-speed dedup skip")
+            return
+        }
+        lineSpeedCheckKey = checkKey
+        com.github.avbox.osc.util.AppLog.i("echo-line-speed start flags=" + flags.size + " first=" + (seriesMap?.get(flags[0].name)?.firstOrNull()?.url ?: "").take(80))
+        _lineSpeeds.value = emptyMap()
+        viewModelScope.launch(Dispatchers.IO) {
+            for (batch in flags.chunked(3)) {
+                val results = coroutineScope {
+                    batch.map { flag ->
+                        async {
+                            val url = seriesMap?.get(flag.name)?.firstOrNull()?.url.orEmpty()
+                            val result = when {
+                                url.isEmpty() || !DefaultConfig.isVideoFormat(url) -> LiveSpeedTester.RESULT_UNSUPPORTED
+                                else -> LiveSpeedTester.probe(url, null)
+                            }
+                            com.github.avbox.osc.util.AppLog.i("echo-line-speed result " + flag.name.orEmpty() + " url=" + url.take(60) + " -> " + result)
+                            result
+                        }
+                    }.awaitAll()
+                }
+                _lineSpeeds.value = _lineSpeeds.value.toMutableMap().apply {
+                    batch.forEachIndexed { idx, flag ->
+                        results.getOrNull(idx)?.let { put(flag.name.orEmpty(), it) }
+                    }
+                }
+            }
+        }
+    }
 
     private var manualLineSwitchPending = false
 

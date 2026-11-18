@@ -24,6 +24,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +68,10 @@ internal fun DetailContent(
     val flags = info.seriesFlags.orEmpty()
     val currentFlag = info.playFlag
     val episodes = info.seriesMap?.get(currentFlag).orEmpty()
+    val lineSpeeds by vm.lineSpeeds.collectAsState()
+    LaunchedEffect(info.id, vm.firstsourceKey, flags.size) {
+        vm.requestLineSpeedCheck(flags, info.seriesMap)
+    }
     val playIndex = info.playIndex
     val collected by vm.collected.collectAsState()
     val followRecord by vm.follow.collectAsState()
@@ -162,6 +167,7 @@ internal fun DetailContent(
                                 name = flag.name ?: "",
                                 count = info.seriesMap?.get(flag.name)?.size ?: 0,
                                 selected = flag.name == currentFlag,
+                                speed = lineSpeeds[flag.name],
                                 onClick = { vm.onFlagClick(flag.name ?: "") },
                             )
                         }
@@ -220,6 +226,7 @@ private fun LineCard(
     name: String,
     count: Int,
     selected: Boolean,
+    speed: Int?,
     onClick: () -> Unit,
 ) {
     DetailItemCard(
@@ -242,5 +249,19 @@ private fun LineCard(
             maxLines = 1,
             modifier = Modifier.padding(top = 6.dp),
         )
+        speed?.let { value ->
+            val (text, color) = when {
+                value > 0 -> stringResource(R.string.live_speed_ms, value) to MaterialTheme.colorScheme.primary
+                value == LiveSpeedTester.RESULT_FAILED -> stringResource(R.string.live_speed_timeout) to MaterialTheme.colorScheme.error
+                else -> stringResource(R.string.live_speed_unsupported) to MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall,
+                color = color,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
