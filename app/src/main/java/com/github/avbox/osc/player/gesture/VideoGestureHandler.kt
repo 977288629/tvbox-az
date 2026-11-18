@@ -21,6 +21,12 @@ interface VideoGestureActions {
     fun onBrightnessSlide(totalDeltaY: Float)
 
     fun onVolumeSlide(totalDeltaY: Float)
+
+    fun onZoomStart()
+
+    fun onZoom(scale: Float)
+
+    fun onZoomEnd()
 }
 
 data class VideoGestureSession(
@@ -54,7 +60,7 @@ class VideoGestureHandler(
     private val commitFraction: Float = 0.10f,
 ) {
 
-    enum class Mode { UNDECIDED, SEEK, BRIGHTNESS, VOLUME, NONE }
+    enum class Mode { UNDECIDED, SEEK, BRIGHTNESS, VOLUME, ZOOM, NONE }
 
     private var session: VideoGestureSession? = null
     private var mode = Mode.UNDECIDED
@@ -63,6 +69,12 @@ class VideoGestureHandler(
     private var lastX = 0f
     private var moved = false
     private var longPressed = false
+    private var zoomStartDist = 0f
+
+    var isZooming: Boolean = false
+        private set
+
+    private var zoomedThisSession = false
 
     var lastTapTime: Long = -1L
         private set
@@ -84,6 +96,8 @@ class VideoGestureHandler(
         this.mode = Mode.UNDECIDED
         this.moved = false
         this.longPressed = false
+        this.isZooming = false
+        this.zoomedThisSession = false
 
         if (session.locked) return GestureVerdict.CLAIMED
         if (session.edge) return GestureVerdict.IGNORE
@@ -132,7 +146,7 @@ class VideoGestureHandler(
                 actions.onVolumeSlide(dy)
                 true
             }
-            Mode.NONE, Mode.UNDECIDED -> false
+            Mode.ZOOM, Mode.NONE, Mode.UNDECIDED -> false
         }
     }
 
@@ -150,8 +164,33 @@ class VideoGestureHandler(
         return if (lastX >= s.screenWidth / 2f) Mode.VOLUME else Mode.BRIGHTNESS
     }
 
+    fun beginZoom(dist: Float) {
+        if (isZooming) return
+        mode = Mode.ZOOM
+        zoomStartDist = dist
+        isZooming = true
+        zoomedThisSession = true
+        if (longPressed) {
+            longPressed = false
+            actions.onLongPressEnd()
+        }
+        actions.onZoomStart()
+    }
+
+    fun onZoomMove(dist: Float) {
+        if (!isZooming || zoomStartDist <= 0f) return
+        actions.onZoom(dist / zoomStartDist)
+    }
+
+    fun endZoom() {
+        if (!isZooming) return
+        isZooming = false
+        actions.onZoomEnd()
+    }
+
     fun maybeLongPress(): Boolean {
         val s = session ?: return false
+        if (isZooming) return false
         if (moved || longPressed) return false
         if (s.locked || s.previewMode || s.paused) return false
         if (!s.inPlayback) return false
@@ -165,6 +204,14 @@ class VideoGestureHandler(
         val endedMode = mode
         session = null
         mode = Mode.UNDECIDED
+
+        if (zoomedThisSession) {
+            zoomedThisSession = false
+            isZooming = false
+            tapPending = false
+            actions.onZoomEnd()
+            return EndResult.NONE
+        }
 
         if (longPressed) {
             longPressed = false

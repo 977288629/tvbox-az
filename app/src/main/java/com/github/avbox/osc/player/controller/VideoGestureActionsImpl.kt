@@ -183,6 +183,28 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
         host.showSlideHint(host.context.getString(R.string.player_gesture_percent, (target * 100).toInt()), brightness = true)
     }
 
+    private var zoomBase = 1f
+
+    override fun onZoomStart() {
+        if (host.isLocked) return
+        zoomBase = host.currentZoomScale()
+        host.actions.hideSeekHint()
+    }
+
+    override fun onZoom(scale: Float) {
+        if (host.isLocked) return
+        val target = (zoomBase * scale).coerceIn(1f, 4f)
+        host.applyZoom(target)
+        host.showSlideHint(
+            host.context.getString(R.string.player_gesture_percent, (target * 100).toInt()),
+            brightness = false,
+        )
+    }
+
+    override fun onZoomEnd() {
+        host.actions.hideSlideHint()
+    }
+
     override fun onVolumeSlide(totalDeltaY: Float) {
         if (host.isLocked) return
         if (audioManager == null) return

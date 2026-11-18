@@ -186,6 +186,19 @@ fun PlaySettingsScreen(onNavigateBack: () -> Unit) {
                 }
                 SettingsCard(SettingsCardPosition.MIDDLE) {
                     SettingsSwitchRow(
+                        title = stringResource(R.string.settings_volume_boost),
+                        subtitle = stringResource(R.string.settings_volume_boost_subtitle),
+                        leadingIconRes = R.drawable.ic_settings_play,
+                        checked = config.volumeBoost,
+                        onCheckedChange = { checked ->
+                            PlaybackSettingsState.volumeBoost = checked
+                            com.github.avbox.osc.player.PlaybackService.peek()?.player()
+                                ?.mediaPlayer?.setVolumeBoost(checked)
+                        },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsSwitchRow(
                         title = stringResource(R.string.settings_play_prefer_aac),
                         leadingIconRes = R.drawable.ic_play_aac,
                         checked = config.preferAac,

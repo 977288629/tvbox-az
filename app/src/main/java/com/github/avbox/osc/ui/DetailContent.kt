@@ -136,6 +136,19 @@ internal fun DetailContent(
                             modifier = Modifier.padding(start = 8.dp),
                         )
                         Spacer(Modifier.weight(1f))
+                        val best = lineSpeeds.entries
+                            .filter { it.value > 0 && it.key != currentFlag }
+                            .minByOrNull { it.value }
+                        if (best != null) {
+                            Text(
+                                text = stringResource(R.string.detail_switch_fastest, best.value),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .playerPressEffect(onTap = { vm.onFlagClick(best.key) })
+                                    .padding(end = 10.dp),
+                            )
+                        }
                         Box(
                             modifier = Modifier.playerPressEffect(onTap = { showSourceSheet = true }),
                             contentAlignment = Alignment.Center,

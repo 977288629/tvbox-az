@@ -3,6 +3,7 @@ package com.github.avbox.osc.player
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.media.audiofx.LoudnessEnhancer
 import android.view.Surface
 import android.view.SurfaceHolder
 import androidx.media3.common.Effect
@@ -149,6 +150,8 @@ class ExoPlayer(context: Context) : KernelPlayer(), PictureEffectHost {
 
     override fun release() {
         PictureEffects.onPlayerReleased(this)
+        volumeBoostFx?.release()
+        volumeBoostFx = null
         engine?.release()
         engine = null
         awaitingPrepared = false
@@ -203,6 +206,24 @@ class ExoPlayer(context: Context) : KernelPlayer(), PictureEffectHost {
 
     override fun setVolume(leftVolume: Float, rightVolume: Float) {
         engine?.setVolume(leftVolume, rightVolume)
+    }
+
+    private var volumeBoostFx: LoudnessEnhancer? = null
+
+    override fun setVolumeBoost(enable: Boolean) {
+        try {
+            if (!enable) {
+                volumeBoostFx?.release()
+                volumeBoostFx = null
+                return
+            }
+            if (volumeBoostFx != null) return
+            val sessionId = engine?.player?.audioSessionId ?: return
+            volumeBoostFx = LoudnessEnhancer(sessionId).apply { setTargetGain(400) }
+            AppLog.i("echo-volume-boost on sessionId=" + sessionId)
+        } catch (th: Throwable) {
+            AppLog.e("echo-volume-boost failed: " + th.message)
+        }
     }
 
     override val volume: Float

@@ -22,6 +22,7 @@ data class PlaybackSettingsConfig(
     val playCache: Boolean,
     val exoCacheSizeMb: Int,
     val preloadNextEpisode: Boolean,
+    val volumeBoost: Boolean,
     val preloadDuration: Int,
     val anime4kEnabled: Boolean,
     val anime4kDeblur: Boolean,
@@ -49,6 +50,7 @@ object PlaybackSettingsState {
         playCache = KV.get(KVKeys.PLAY_CACHE, false),
         exoCacheSizeMb = KV.get(KVKeys.EXO_CACHE_SIZE_MB, KVKeys.EXO_CACHE_SIZE_MB_DEFAULT),
         preloadNextEpisode = KV.get(KVKeys.PRELOAD_NEXT_EPISODE, false),
+        volumeBoost = KV.get(KVKeys.VOLUME_BOOST, false),
         preloadDuration = KV.get(KVKeys.PRELOAD_DURATION, KVKeys.PRELOAD_DURATION_DEFAULT),
         anime4kEnabled = KV.get(KVKeys.ANIME4K_ENABLED, false),
         anime4kDeblur = KV.get(KVKeys.ANIME4K_DEBLUR, false),
@@ -151,6 +153,13 @@ object PlaybackSettingsState {
         set(value) {
             KV.put(KVKeys.PRELOAD_NEXT_EPISODE, value)
             current = current.copy(preloadNextEpisode = value)
+        }
+
+    var volumeBoost: Boolean
+        get() = current.volumeBoost
+        set(value) {
+            KV.put(KVKeys.VOLUME_BOOST, value)
+            current = current.copy(volumeBoost = value)
         }
 
     var preloadDuration: Int

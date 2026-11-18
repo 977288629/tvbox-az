@@ -135,6 +135,12 @@ class VideoPlayerController(
         videoView?.seekTo(positionMs)
     }
 
+    fun currentZoomScale(): Float = videoView?.zoomScale() ?: 1f
+
+    fun applyZoom(scale: Float) {
+        videoView?.applyZoom(scale)
+    }
+
     fun setSpeedFromGesture(speed: Float) {
         videoView?.setSpeed(speed)
     }

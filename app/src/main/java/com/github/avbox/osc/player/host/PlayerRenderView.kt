@@ -15,6 +15,8 @@ interface PlayerRenderView {
 
     fun setScaleType(scaleType: Int)
 
+    fun setZoomScale(scale: Float)
+
     fun getView(): View
 
     fun doScreenShot(): Bitmap?

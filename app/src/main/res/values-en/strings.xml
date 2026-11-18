@@ -705,4 +705,7 @@
     <string name="follow_notify_text">Updated to episode %1$d</string>
     <string name="settings_follow_notify">Follow update alerts</string>
     <string name="settings_follow_notify_subtitle">Notify when followed shows get new episodes</string>
+    <string name="detail_switch_fastest">Fastest %1$dms</string>
+    <string name="settings_volume_boost">Volume boost</string>
+    <string name="settings_volume_boost_subtitle">Boost sources with low volume</string>
 </resources>

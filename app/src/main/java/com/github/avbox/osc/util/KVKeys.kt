@@ -64,6 +64,7 @@ object KVKeys {
     const val HOME_HOT_DAY = "home_hot_day"
     const val INCOGNITO = "incognito"
     const val FOLLOW_NOTIFY = "follow_notify"
+    const val VOLUME_BOOST = "volume_boost"
     const val HIDE_STATUS_BAR = "hide_status_bar"
     const val GESTURE_CONTROL_DISABLED = "gesture_control_disabled"
     const val NAV_ANIMATION_DISABLED = "nav_animation_disabled"

@@ -65,6 +65,11 @@ class EngineSurfaceRenderView @JvmOverloads constructor(
         requestLayout()
     }
 
+    override fun setZoomScale(scale: Float) {
+        scaleX = scale
+        scaleY = scale
+    }
+
     override fun getView(): View = this
 
     override fun doScreenShot(): Bitmap? = null

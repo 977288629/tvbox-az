@@ -67,6 +67,16 @@ open class BasePlayerView @JvmOverloads constructor(
 
     protected var currentScaleType = SCREEN_SCALE_DEFAULT
 
+    var currentZoomScale: Float = 1f
+        private set
+
+    fun applyZoom(scale: Float) {
+        currentZoomScale = scale.coerceIn(1f, 4f)
+        activeRenderView?.setZoomScale(currentZoomScale)
+    }
+
+    fun zoomScale(): Float = currentZoomScale
+
     protected var videoSizePx = intArrayOf(0, 0)
 
     protected var playUrl: String? = null
@@ -143,6 +153,8 @@ open class BasePlayerView @JvmOverloads constructor(
         kernelPlayer = null
         initPlayer()
         addDisplay()
+        currentZoomScale = 1f
+        activeRenderView?.setZoomScale(1f)
         val sink = progressSinkRef
         val key = progressKey()
         if (sink == null) {
@@ -176,6 +188,7 @@ open class BasePlayerView @JvmOverloads constructor(
         val player = createPlayer()
         (player as? ExoPlayer)?.videoCodecObserver = videoCodecObserver
         player.playerEventListener = kernelEventListener
+        player.setVolumeBoost(com.github.avbox.osc.util.KV.get(com.github.avbox.osc.util.KVKeys.VOLUME_BOOST, false))
         kernelPlayer = player
         setInitOptions()
         player.initPlayer()

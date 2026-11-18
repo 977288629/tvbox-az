@@ -44,6 +44,21 @@ fun Modifier.videoGestureLayer(
                             firstUp = true
                             return@withTimeoutOrNull false
                         }
+                        val pressedCount = e.changes.count { it.pressed }
+                        if (pressedCount >= 2 && !snapshot.locked && !snapshot.previewMode) {
+                            val pts = e.changes.filter { it.pressed }.map { it.position }
+                            val dist = if (pts.size >= 2) {
+                                kotlin.math.hypot(
+                                    (pts[0].x - pts[1].x).toDouble(),
+                                    (pts[0].y - pts[1].y).toDouble(),
+                                ).toFloat()
+                            } else 0f
+                            if (dist > 0f) {
+                                if (handler.isZooming) handler.onZoomMove(dist) else handler.beginZoom(dist)
+                            }
+                            e.changes.forEach { ch -> if (ch.id != down.id) ch.consume() }
+                            continue
+                        }
                         sawMove = true
                         lastMoveAt = System.currentTimeMillis()
                         if (!c.isConsumed) handler.onMove(c.position.x, c.position.y, 8f)
@@ -59,7 +74,23 @@ fun Modifier.videoGestureLayer(
                 if (!firstUp) {
                     while (true) {
                         val e = awaitPointerEvent(PointerEventPass.Final)
-                        val c = e.changes.firstOrNull { it.id == down.id } ?: continue
+                        if (handler.isZooming) {
+                            val pressedCount = e.changes.count { it.pressed }
+                            if (pressedCount >= 2) {
+                                val pts = e.changes.filter { it.pressed }.map { it.position }
+                                val dist = if (pts.size >= 2) {
+                                    kotlin.math.hypot(
+                                        (pts[0].x - pts[1].x).toDouble(),
+                                        (pts[0].y - pts[1].y).toDouble(),
+                                    ).toFloat()
+                                } else 0f
+                                if (dist > 0f) handler.onZoomMove(dist)
+                                e.changes.forEach { ch -> if (ch.id != down.id) ch.consume() }
+                                continue
+                            }
+                            break
+                        }
+                        val c = e.changes.firstOrNull { it.id == down.id } ?: break
                         if (!c.pressed) break
                         sawMove = true
                         lastMoveAt = System.currentTimeMillis()

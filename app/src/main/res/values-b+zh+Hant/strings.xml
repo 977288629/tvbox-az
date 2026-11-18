@@ -705,4 +705,7 @@
     <string name="follow_notify_text">更新至第 %1$d 集</string>
     <string name="settings_follow_notify">追更更新提醒</string>
     <string name="settings_follow_notify_subtitle">追劇有新集數時在通知欄提醒</string>
+    <string name="detail_switch_fastest">最快 %1$dms</string>
+    <string name="settings_volume_boost">音量增強</string>
+    <string name="settings_volume_boost_subtitle">提升偏小音量的片源</string>
 </resources>

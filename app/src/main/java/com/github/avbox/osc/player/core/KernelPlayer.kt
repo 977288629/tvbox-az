@@ -101,6 +101,8 @@ abstract class KernelPlayer {
     open val volume: Float
         get() = 1f
 
+    open fun setVolumeBoost(enable: Boolean) {}
+
     abstract val tcpSpeed: Long
 
     companion object {
