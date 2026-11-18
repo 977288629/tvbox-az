@@ -48,6 +48,7 @@ import kotlin.math.roundToInt
 
 @Composable
 fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
+    val context = LocalContext.current
     val uiConfig = UiSettingsState.config
     val playbackConfig = PlaybackSettingsState.config
     val danmuConfig = DanmuSettingsState.config
@@ -157,6 +158,20 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
                         subtitle = stringResource(R.string.settings_gesture_disable_subtitle),
                         checked = uiConfig.gestureControlDisabled,
                         onCheckedChange = { UiSettingsState.gestureControlDisabled = it },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_follow_notify),
+                        leadingIconRes = R.drawable.ic_tab_following,
+                        subtitle = stringResource(R.string.settings_follow_notify_subtitle),
+                        checked = uiConfig.followNotify,
+                        onCheckedChange = { enabled ->
+                            UiSettingsState.followNotify = enabled
+                            if (!enabled) {
+                                com.github.avbox.osc.api.FollowUpdateChecker.cancelAllNotifications(context)
+                            }
+                        },
                     )
                 }
                 SettingsCard(SettingsCardPosition.MIDDLE) {

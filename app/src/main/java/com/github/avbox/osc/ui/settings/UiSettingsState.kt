@@ -21,6 +21,7 @@ data class UiSettingsConfig(
     val dohIndex: Int,
     val downloadWifiOnly: Boolean,
     val downloadConcurrency: Int,
+    val followNotify: Boolean,
 )
 
 object UiSettingsState {
@@ -43,6 +44,7 @@ object UiSettingsState {
         dohIndex = KV.get(KVKeys.DOH_URL, 0),
         downloadWifiOnly = KV.get(KVKeys.DOWNLOAD_WIFI_ONLY, false),
         downloadConcurrency = KV.get(KVKeys.DOWNLOAD_CONCURRENCY, 3).coerceIn(1, 3),
+        followNotify = KV.get(KVKeys.FOLLOW_NOTIFY, true),
     )
 
     fun reload() {
@@ -54,6 +56,13 @@ object UiSettingsState {
         set(value) {
             KV.put(KVKeys.NAV_ANIMATION_DISABLED, value)
             current = current.copy(navAnimationDisabled = value)
+        }
+
+    var followNotify: Boolean
+        get() = current.followNotify
+        set(value) {
+            KV.put(KVKeys.FOLLOW_NOTIFY, value)
+            current = current.copy(followNotify = value)
         }
 
     var navLiveHidden: Boolean

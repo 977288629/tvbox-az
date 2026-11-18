@@ -51,6 +51,11 @@ object FollowUpdateChecker {
     }
 
     private suspend fun runCheck(context: Context) {
+        if (!com.github.avbox.osc.util.KV.get(com.github.avbox.osc.util.KVKeys.FOLLOW_NOTIFY, true)) {
+            AppLog.i("echo-follow-check disabled by setting")
+            cancelAllNotifications(context)
+            return
+        }
         try {
             val last = KV.get(KV_LAST_CHECK, 0L) as? Long ?: 0L
             val now = System.currentTimeMillis()
@@ -171,6 +176,19 @@ object FollowUpdateChecker {
         } catch (th: Throwable) {
             AppLog.i("echo-follow-check notify failed: " + th.message)
             false
+        }
+    }
+
+    fun cancelAllNotifications(context: Context) {
+        try {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                for (record in manager.activeNotifications) {
+                    if (record.tag == TAG_NOTIFY) manager.cancel(record.tag, record.id)
+                }
+            }
+        } catch (th: Throwable) {
+            AppLog.i("echo-follow-check cancel failed: " + th.message)
         }
     }
 

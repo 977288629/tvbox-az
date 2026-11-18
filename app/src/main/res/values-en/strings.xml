@@ -703,4 +703,6 @@
     <string name="player_mpv">MPV</string>
     <string name="follow_channel_name">Follow updates</string>
     <string name="follow_notify_text">Updated to episode %1$d</string>
+    <string name="settings_follow_notify">Follow update alerts</string>
+    <string name="settings_follow_notify_subtitle">Notify when followed shows get new episodes</string>
 </resources>
