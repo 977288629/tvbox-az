@@ -850,6 +850,14 @@ class PlaybackController {
         renderRebuildGuard: (() -> Boolean)? = null,
         startLineTimeoutIso: Boolean? = null,
     ): Boolean {
+        val cfgType = playerCfg?.optInt("pl", 2) ?: 2
+        val globalType = com.github.avbox.osc.util.KV.get(
+            com.github.avbox.osc.util.KVKeys.PLAY_TYPE, 2,
+        ) as? Int ?: 2
+        val wantedType = if (globalType == BasePlayerView.PLAYER_TYPE_MPV) globalType else cfgType
+        val kernelSwitched = view.playerType != wantedType
+        view.playerType = wantedType
+        if (kernelSwitched && view.mediaPlayer != null) view.requireKernelRebuild()
         if (renderRebuildGuard != null && view.mediaPlayer != null && renderRebuildGuard() &&
             view.needsRenderRebuild(view.factoryRenderType())
         ) {

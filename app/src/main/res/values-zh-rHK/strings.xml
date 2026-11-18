@@ -156,4 +156,5 @@
     <string name="player_sleep_off">關閉</string>
     <string name="player_sleep_minutes">%1$d分鐘</string>
     <string name="player_sleep_remaining">剩餘 %1$d 分 %2$d 秒</string>
+    <string name="player_mpv">MPV</string>
 </resources>

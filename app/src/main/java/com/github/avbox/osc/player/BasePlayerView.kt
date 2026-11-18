@@ -50,6 +50,8 @@ open class BasePlayerView @JvmOverloads constructor(
 
     protected var kernelPlayer: KernelPlayer? = null
 
+    var playerType: Int = 2
+
     protected var progressSinkRef: ProgressSink? = null
 
     protected val playerFrame: FrameLayout = FrameLayout(context)
@@ -180,7 +182,8 @@ open class BasePlayerView @JvmOverloads constructor(
         setOptions()
     }
 
-    protected open fun createPlayer(): KernelPlayer = ExoPlayer(context)
+    protected open fun createPlayer(): KernelPlayer =
+        if (playerType == PLAYER_TYPE_MPV) MpvPlayer(context) else ExoPlayer(context)
 
     protected open fun setInitOptions() = Unit
 
@@ -707,6 +710,8 @@ open class BasePlayerView @JvmOverloads constructor(
     }
 
     companion object {
+
+        const val PLAYER_TYPE_MPV = 3
 
         const val SCREEN_SCALE_DEFAULT = 0
         const val SCREEN_SCALE_16_9 = 1

@@ -38,6 +38,8 @@
         </intent>
     </queries>
 
+    <uses-sdk tools:overrideLibrary="dev.jdtech.mpv" />
+
     <application
         android:name=".base.App"
         android:allowBackup="true"

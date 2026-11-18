@@ -237,6 +237,7 @@ class PlayContainerViewBridge(private val container: PlayContainer) : PlaybackVi
         container.playerController != null && container.playerController.switchPlayer()
 
     override fun applyPlayerConfig(cfg: JSONObject) {
+        container.kernelView?.playerType = cfg.optInt("pl", 2)
         container.playerController?.setPlayerConfig(cfg)
     }
 

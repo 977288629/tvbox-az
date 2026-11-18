@@ -215,6 +215,7 @@ internal class PlayerConfigDelegate(private val host: VideoPlayerController) {
         val cfg = host.playerConfig ?: return
         if (playerType == cfg.optInt("pl", 2)) return
         host.listener?.updatePlayerCfg(suppressAutoSwitch = true) { it.put("pl", playerType) }
+        host.videoView?.requireKernelRebuild()
         host.listener?.replay(false)
     }
 

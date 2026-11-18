@@ -14,6 +14,7 @@ object PlayerCatalog {
     @JvmStatic
     fun name(playType: Int): String {
         return when (playType) {
+            3 -> str(R.string.player_mpv)
             13 -> str(R.string.player_nearby_tvbox)
             else -> str(R.string.player_exo)
         }
@@ -29,6 +30,7 @@ object PlayerCatalog {
         if (cached != null) return cached
         val playersExist = HashMap<Int, Boolean>()
         playersExist[2] = true
+        playersExist[3] = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
         playersExist[13] = RemoteTVBox.avalible != null
         playersExistInfo = playersExist
         return playersExist
