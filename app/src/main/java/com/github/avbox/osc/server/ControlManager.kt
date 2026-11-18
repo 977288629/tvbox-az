@@ -2,6 +2,7 @@ package com.github.avbox.osc.server
 
 import android.content.Context
 
+import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.util.LocalAddress
 
 import java.io.IOException
@@ -19,19 +20,24 @@ class ControlManager private constructor() {
         return if (local) server.loadAddress() else server.serverAddress()
     }
 
-    fun startServer() {
+    fun startServer() = synchronized(this) {
         if (httpServer?.isStarting() == true) {
+            AppLog.i("echo-server startServer skipped, already starting")
             return
         }
         val context = requireNotNull(hostContext) { "control manager context not initialized" }
+        var attempts = 0
         do {
+            attempts++
             val server = RemoteServer(RemoteServer.serverPort, context)
             httpServer = server
             try {
                 server.start()
+                AppLog.i("echo-server started on port " + RemoteServer.serverPort + " attempts=" + attempts)
                 onProxyPortReady?.invoke(RemoteServer.serverPort)
                 break
             } catch (ex: IOException) {
+                AppLog.i("echo-server bind fail port=" + RemoteServer.serverPort + " err=" + ex.message)
                 RemoteServer.serverPort++
                 server.stop()
             }

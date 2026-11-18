@@ -64,7 +64,11 @@ object AppBootstrap {
     }
 
     fun start() {
-        if (started) return
+        AppLog.i("echo-boot AppBootstrap.start called, started=" + started)
+        if (started) {
+            ensureServerAlive()
+            return
+        }
         started = true
         installServerPorts()
         val generation = bootGeneration.next()
@@ -74,6 +78,16 @@ object AppBootstrap {
             Probe.trace("boot:bootstrapServer") { ControlManager.get().startServer() }
             startInit(forceFresh = false, offline = false, generation = generation)
         }
+    }
+
+    // 进程内退出(BackHandler stopServer + finishAffinity)后再进 app 时，
+    // started 已为 true 而 server 已被停掉，这里幂等地把 server 拉起来。
+    private fun ensureServerAlive() {
+        val port = ControlManager.get().startedPort()
+        AppLog.i("echo-boot ensureServerAlive port=" + port)
+        if (port > 0) return
+        installServerPorts()
+        scope.launch { ControlManager.get().startServer() }
     }
 
     fun retry() {
