@@ -98,6 +98,9 @@ private enum class AppTab(@StringRes val labelRes: Int, @DrawableRes val icon: I
 fun MainScreen() {
     LaunchedEffect(Unit) { AppBootstrap.start() }
     val boot by AppBootstrap.state.collectAsState()
+    LaunchedEffect(boot) {
+        if (boot is AppBootstrap.Boot.Ready) com.github.avbox.osc.api.FollowUpdateChecker.onAppReady()
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         MainContent()
         if (boot is AppBootstrap.Boot.Error) {

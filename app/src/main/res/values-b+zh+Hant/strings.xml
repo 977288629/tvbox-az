@@ -701,4 +701,6 @@
     <string name="player_sleep_minutes">%1$d分鐘</string>
     <string name="player_sleep_remaining">剩餘 %1$d 分 %2$d 秒</string>
     <string name="player_mpv">MPV</string>
+    <string name="follow_channel_name">追更提醒</string>
+    <string name="follow_notify_text">更新至第 %1$d 集</string>
 </resources>

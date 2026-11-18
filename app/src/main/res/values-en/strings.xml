@@ -701,4 +701,6 @@
     <string name="player_sleep_minutes">%1$d min</string>
     <string name="player_sleep_remaining">%1$d min %2$d sec left</string>
     <string name="player_mpv">MPV</string>
+    <string name="follow_channel_name">Follow updates</string>
+    <string name="follow_notify_text">Updated to episode %1$d</string>
 </resources>
