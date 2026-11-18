@@ -2,6 +2,7 @@ package com.github.avbox.osc.player.controller
 
 import android.os.SystemClock
 import com.github.avbox.osc.R
+import com.github.avbox.osc.player.SleepTimer
 import com.github.avbox.osc.player.core.DecodeDecision
 import com.github.avbox.osc.player.core.VideoCodecInfo
 import com.github.avbox.osc.player.effect.PictureEffects
@@ -137,6 +138,9 @@ internal class PlayerConfigDelegate(private val host: VideoPlayerController) {
                 null
             },
             onPipClicked = { host.requestEnterPip() },
+            sleepMinutes = SleepTimer.selectedMinutes.value,
+            sleepRemainingMs = SleepTimer.remainingMs.value,
+            onSleepSelected = { SleepTimer.select(it) },
         )
     }
 

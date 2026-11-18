@@ -534,6 +534,9 @@ class ParamsSheetState(
     val onResetTime: () -> Unit,
     val onSearchDanmu: (() -> Unit)?,
     val onPipClicked: (() -> Unit)? = null,
+    val sleepMinutes: Int = 0,
+    val sleepRemainingMs: Long = 0L,
+    val onSleepSelected: (Int) -> Unit = {},
 )
 
 class PictureParamsState(

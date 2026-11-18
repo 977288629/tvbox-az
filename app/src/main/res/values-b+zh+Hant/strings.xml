@@ -696,4 +696,8 @@
     <string name="live_speed_ms">%1$dms</string>
     <string name="live_speed_timeout">超時</string>
     <string name="live_speed_unsupported">不支持</string>
+    <string name="player_params_sleep_timer">睡眠定時</string>
+    <string name="player_sleep_off">關閉</string>
+    <string name="player_sleep_minutes">%1$d分鐘</string>
+    <string name="player_sleep_remaining">剩餘 %1$d 分 %2$d 秒</string>
 </resources>

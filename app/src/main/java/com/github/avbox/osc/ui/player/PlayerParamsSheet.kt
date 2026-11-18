@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.github.avbox.osc.R
+import com.github.avbox.osc.player.SleepTimer
 import com.github.avbox.osc.player.state.ParamsChoice
 import com.github.avbox.osc.player.state.ParamsSheetState
 import com.github.avbox.osc.player.state.ParamsTab
@@ -110,6 +112,8 @@ private fun PlaybackParams(
         ParamsSliderGroup(R.string.player_params_speed, sheet.speed, R.drawable.player_ic_params_speed)
         ParamsGroupDivider()
         ParamsTimeGroup(sheet)
+        ParamsGroupDivider()
+        ParamsSleepTimerGroup(sheet)
         ParamsGroupDivider()
         ParamsChoiceGroup(R.string.live_group_scale, sheet.scale, R.drawable.player_ic_params_scale)
         ParamsGroupDivider()
@@ -257,3 +261,39 @@ private fun ParamsTimeGroup(sheet: ParamsSheetState) {
 @Composable
 private fun timeMarkText(time: String, @StringRes labelRes: Int, @StringRes setRes: Int): String =
     if (time.isEmpty()) stringResource(setRes) else "${stringResource(labelRes)} $time"
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ParamsSleepTimerGroup(sheet: ParamsSheetState) {
+    val selected by SleepTimer.selectedMinutes.collectAsState()
+    val remaining by SleepTimer.remainingMs.collectAsState()
+    val remainingText = if (selected > 0 && remaining > 0) {
+        val totalSec = ((remaining + 999) / 1000).toInt()
+        stringResource(R.string.player_sleep_remaining, totalSec / 60, totalSec % 60)
+    } else {
+        null
+    }
+    ParamsGroupHeader(
+        R.string.player_params_sleep_timer,
+        R.drawable.player_ic_params_sleep,
+        valueText = remainingText,
+    )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(playerDim(R.dimen.vs_10)),
+        verticalArrangement = Arrangement.spacedBy(playerDim(R.dimen.vs_10)),
+    ) {
+        SleepTimer.optionsMinutes.forEach { minutes ->
+            val label = if (minutes == 0) {
+                stringResource(R.string.player_sleep_off)
+            } else {
+                stringResource(R.string.player_sleep_minutes, minutes)
+            }
+            SheetButton(
+                text = label,
+                selected = selected == minutes,
+                onClick = { sheet.onSleepSelected(minutes) },
+                contentPadding = playerDim(R.dimen.vs_20),
+            )
+        }
+    }
+}
