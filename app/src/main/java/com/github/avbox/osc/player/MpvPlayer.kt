@@ -93,8 +93,16 @@ class MpvPlayer(private val context: Context) : KernelPlayer() {
                     if (w > 0 && h > 0) playerEventListener?.onVideoSizeChanged(w, h)
                 }
                 MPVLib.MpvEvent.MPV_EVENT_END_FILE -> {
-                    machine.onCompletion()
-                    playerEventListener?.onCompletion()
+                    val eof = getPropBoolean("eof-reached") ?: false
+                    if (eof) {
+                        machine.onCompletion()
+                        playerEventListener?.onCompletion()
+                    } else {
+                        AppLog.i(TAG + " end-file without eof -> treat as load error")
+                        if (sourceUrl.isNotEmpty()) PlayerKernelSelector.markMpvFailed(sourceUrl)
+                        machine.onError()
+                        playerEventListener?.onError()
+                    }
                 }
             }
         }

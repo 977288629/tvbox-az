@@ -635,6 +635,7 @@ class PlaybackController {
 
     fun onKernelPlayError() {
         rememberErrorHttpStatus()
+        if (tryMpvFallbackToMedia3()) return
         if (isPlaybackStarted()) {
             cancelPlayTimeout()
             view?.hideTipOnUiThread()
@@ -653,6 +654,24 @@ class PlaybackController {
                 showTerminalError()
             }
         }
+    }
+
+    private fun tryMpvFallbackToMedia3(): Boolean {
+        val currentView = view ?: return false
+        if ((playerCfg?.optInt("pl", 2) ?: 2) != BasePlayerView.PLAYER_TYPE_MPV) return false
+        if (st.hasAutoSwitchedPlayer) return false
+        val url = webPlayUrl() ?: currentView.currentUrl() ?: return false
+        PlayerKernelSelector.markMpvFailed(url)
+        AppLog.i("echo-mpv-fallback: switch to Media3 and replay " + url.takeLast(60))
+        updateAttemptState { it.copy(hasAutoSwitchedPlayer = true, allowSwitchPlayer = false) }
+        commitPlayerCfg({ it.put("pl", PlayerKernelSelector.KERNEL_MEDIA3) }, persist = false)
+        scope.launch {
+            stopParse()
+            initParseLoadFound()
+            if (!isCrossContentReuseAllowed()) currentView.releasePlayer()
+            playUrl(url, webHeaderMap())
+        }
+        return true
     }
 
     private fun showTerminalError() {
@@ -854,7 +873,8 @@ class PlaybackController {
         val globalType = com.github.avbox.osc.util.KV.get(
             com.github.avbox.osc.util.KVKeys.PLAY_TYPE, 2,
         ) as? Int ?: 2
-        val wantedType = if (globalType == BasePlayerView.PLAYER_TYPE_MPV) globalType else cfgType
+        val preferred = if (globalType == BasePlayerView.PLAYER_TYPE_MPV) globalType else cfgType
+        val wantedType = PlayerKernelSelector.prefer(url, headers, preferred)
         val kernelSwitched = view.playerType != wantedType
         view.playerType = wantedType
         if (kernelSwitched && view.mediaPlayer != null) view.requireKernelRebuild()
