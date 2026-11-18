@@ -229,26 +229,28 @@ private fun LineCard(
     speed: Int?,
     onClick: () -> Unit,
 ) {
-    DetailItemCard(
-        selected = selected,
-        onClick = onClick,
-        modifier = Modifier.width(DetailItemWidth),
-    ) {
-        Text(
-            text = name,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = stringResource(R.string.detail_line_video_count, count),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp),
-        )
+    Column(modifier = Modifier.width(DetailItemWidth)) {
+        DetailItemCard(
+            selected = selected,
+            onClick = onClick,
+            modifier = Modifier.width(DetailItemWidth),
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = stringResource(R.string.detail_line_video_count, count),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
         speed?.let { value ->
             val (text, color) = when {
                 value > 0 -> stringResource(R.string.live_speed_ms, value) to MaterialTheme.colorScheme.primary
