@@ -293,6 +293,18 @@ object DownloadManager {
         File(dest.parentFile, dest.name + ".parts").deleteRecursively()
     }
 
+    // 边下边播：HTTP 顺序落盘的 .tmp 中间文件可直接播放已下部分（mp4 moov 在头 / ts 流）。
+    // M3U8 的 .parts 分片无法直接播，返回 null。
+    fun playableFileOf(task: DownloadTask): File? {
+        if (task.type() != DownloadType.HTTP) return null
+        val state = task.status()
+        if (state != DownloadState.DOWNLOADING && state != DownloadState.PAUSED) return null
+        val dest = outputFile(task) ?: return null
+        val tmp = File(dest.parentFile, dest.name + ".tmp")
+        if (!tmp.exists() || tmp.length() < MIN_STREAMABLE_BYTES) return null
+        return tmp
+    }
+
     private fun outputFile(task: DownloadTask): File? {
         val context = AppContextHolder.context() ?: return null
         val root = File(context.getExternalFilesDir(null), "downloads")
@@ -303,6 +315,8 @@ object DownloadManager {
         val ext = FileDownloader.extOf(task.episodeUrl.orEmpty())
         return File(dir, "$name.$ext")
     }
+
+    private const val MIN_STREAMABLE_BYTES = 512 * 1024L
 
     private fun safeName(raw: String): String {
         val cleaned = raw.trim().replace(Regex("[\\\\/:*?\"<>|]"), "_").replace(Regex("\\s+"), "_")

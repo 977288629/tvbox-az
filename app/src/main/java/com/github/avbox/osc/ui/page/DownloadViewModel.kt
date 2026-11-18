@@ -33,7 +33,10 @@ data class DownloadUiItem(
     val canResume: Boolean,
     val canRetry: Boolean,
     val isM3u8: Boolean,
-)
+    val playablePath: String? = null,
+) {
+    val canStreamPlay: Boolean get() = playablePath != null
+}
 
 data class DownloadGroup(
     val key: String,
@@ -139,6 +142,7 @@ class DownloadViewModel(
             canResume = state == DownloadState.PAUSED,
             canRetry = state == DownloadState.FAILED,
             isM3u8 = type() == DownloadType.M3U8,
+            playablePath = DownloadManager.playableFileOf(this)?.absolutePath,
         )
     }
 

@@ -36,7 +36,7 @@ class DownloadActivity : BaseActivity() {
     }
 
     private fun play(item: DownloadUiItem) {
-        val path = item.filePath ?: return
+        val path = item.playablePath ?: item.filePath ?: return
         LocalPlayActivity.start(this, path, item.name, item.sourceKey.orEmpty())
     }
 }

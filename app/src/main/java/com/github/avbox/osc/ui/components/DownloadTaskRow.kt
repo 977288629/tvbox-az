@@ -253,6 +253,7 @@ private fun EpisodeRow(
         ) {
             when {
                 item.isCompleted -> PillIconButton(R.drawable.player_ic_play, MaterialTheme.colorScheme.tertiaryContainer, onPlay)
+                item.canStreamPlay -> PillIconButton(R.drawable.player_ic_play, MaterialTheme.colorScheme.primaryContainer, onPlay)
                 item.canResume -> PillIconButton(R.drawable.player_ic_play, MaterialTheme.colorScheme.primaryContainer, onResume)
                 item.canPause && item.status == 2 -> PillIconButton(R.drawable.ic_download_pause, MaterialTheme.colorScheme.primaryContainer, onPause)
                 item.canRetry -> TextButton(onClick = onRetry) {
