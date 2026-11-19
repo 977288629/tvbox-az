@@ -161,13 +161,7 @@ fun SettingsPage(
 
     AppTopBarScaffold(
         topBarStartInset = navStart,
-        titleContent = {
-            Text(
-                text = stringResource(R.string.tab_mine),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        },
+        titleContent = {},
     ) { topPad, _ ->
         Column(
             modifier = Modifier
