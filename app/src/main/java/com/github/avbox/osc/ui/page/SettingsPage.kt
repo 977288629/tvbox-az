@@ -9,10 +9,15 @@ import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
 import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +25,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,10 +39,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -386,6 +398,7 @@ fun SettingsPage(
 
 @Composable
 private fun AboutSheet(versionName: String, onDismiss: () -> Unit) {
+    val context = LocalContext.current
     AVBoxBottomSheet(
         onDismissRequest = onDismiss,
         title = stringResource(R.string.settings_about),
@@ -396,25 +409,127 @@ private fun AboutSheet(versionName: String, onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            if (versionName.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.settings_about_version, versionName),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            SettingsCard(SettingsCardPosition.SINGLE) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(92.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(R.mipmap.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(92.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.settings_app_tagline),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_about_app_line2),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(8.dp))
+                    AboutValueRow(
+                        label = stringResource(R.string.settings_about_version_label),
+                        value = versionName.ifEmpty { "-" },
+                    )
+                }
             }
-            Text(
-                text = stringResource(R.string.settings_about_disclaimer),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+
+            SettingsGroup(title = stringResource(R.string.settings_about_project_group)) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_about_project_row),
+                        subtitle = stringResource(R.string.settings_about_project_tap),
+                        iconRes = R.drawable.ic_settings_github,
+                        onClick = { openExternalUrl(context, GITHUB_REPO_URL) },
+                    )
+                }
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_about_disclaimer_group)) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        DisclaimerParagraph(stringResource(R.string.settings_about_disclaimer_1))
+                        DisclaimerParagraph(stringResource(R.string.settings_about_disclaimer_2))
+                        DisclaimerParagraph(stringResource(R.string.settings_about_disclaimer_3))
+                        DisclaimerParagraph(stringResource(R.string.settings_about_disclaimer_4))
+                        DisclaimerParagraph(stringResource(R.string.settings_about_disclaimer_5), last = true)
+                    }
+                }
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_about_privacy_group)) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        DisclaimerParagraph(stringResource(R.string.settings_about_privacy_1))
+                        DisclaimerParagraph(stringResource(R.string.settings_about_privacy_2))
+                        DisclaimerParagraph(stringResource(R.string.settings_about_privacy_3), last = true)
+                    }
+                }
+            }
         }
     }
 }
 
-private const val AboutSheetHeightFraction = 0.6f
+@Composable
+private fun AboutValueRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun DisclaimerParagraph(text: String, last: Boolean = false) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        )
+        if (!last) HorizontalDivider()
+    }
+}
+
+private const val AboutSheetHeightFraction = 0.86f
 
 private const val GITHUB_REPO_URL = "https://github.com/XiaochangXu/AVBox"
 

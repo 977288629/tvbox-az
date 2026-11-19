@@ -493,6 +493,22 @@
     <string name="settings_github">造訪 GitHub 儲存庫</string>
     <string name="settings_github_subtitle">造訪專案原始碼儲存庫</string>
     <string name="settings_app_tagline">一款開源的影片播放器</string>
+    <string name="settings_about_app_line2">相容 TVBox 影視源的 Android 應用</string>
+    <string name="settings_about_version_label">版本</string>
+    <string name="settings_about_project_group">項目與開發者</string>
+    <string name="settings_about_project_row">項目源碼 · 基於 AVBox 二開</string>
+    <string name="settings_about_project_tap">點擊打開 GitHub 倉庫</string>
+    <string name="settings_about_license">許可證</string>
+    <string name="settings_about_disclaimer_group">免責協議</string>
+    <string name="settings_about_disclaimer_1">萌貓Box不提供、內置或分發影視源，也不提供在線片庫。影視源由用戶自行從網絡公開分享獲取，或自行編寫後導入；在線影視內容由對應的第三方網站提供。</string>
+    <string name="settings_about_disclaimer_2">影視內容、海報、簡介等素材的版權歸原作者或合法權利人所有。源可被導入、內容可被訪問，不代表已獲得版權授權；請僅在獲得授權或法律允許的範圍內使用，並支持正版影視。</string>
+    <string name="settings_about_disclaimer_3">第三方影視源及其內容不受本應用控制，可能因網站調整、網絡環境等原因失效。本應用不保證第三方內容的準確性、完整性、安全性或源的持續可用性，請自行核實來源。</string>
+    <string name="settings_about_disclaimer_4">用戶應對自行導入的影視源及使用行為負責，遵守適用法律法規和來源網站的使用規則，不得利用本應用侵犯他人權益、傳播違法內容或未經授權複製、分發作品。</string>
+    <string name="settings_about_disclaimer_5">如發現涉嫌侵權內容，請停止訪問、刪除相關影視源及本地緩存，並向內容來源網站反饋。本協議不免除任何一方依法應承擔的責任。</string>
+    <string name="settings_about_privacy_group">數據與隱私</string>
+    <string name="settings_about_privacy_1">收藏、觀看進度、訂閱源和日誌保存在本機。導入訂閱源、訪問在線內容和刷新配置時，會連接相應來源的網站。</string>
+    <string name="settings_about_privacy_2">應用不會自動上傳診斷日誌，相關數據僅保存在本機。</string>
+    <string name="settings_about_privacy_3">應用不提供內置影視源或在線片庫，請使用你有權訪問的內容與源。</string>
     <string name="settings_app_version">應用版本</string>
 
     <string name="settings_preference_title">偏好設定</string>

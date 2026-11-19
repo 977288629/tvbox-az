@@ -493,6 +493,22 @@
     <string name="settings_github">Visit GitHub Repository</string>
     <string name="settings_github_subtitle">Open the project source repository</string>
     <string name="settings_app_tagline">Open-source video player</string>
+    <string name="settings_about_app_line2">An Android video app compatible with TVBox sources</string>
+    <string name="settings_about_version_label">Version</string>
+    <string name="settings_about_project_group">Project &amp; Developer</string>
+    <string name="settings_about_project_row">Source code · Based on AVBox</string>
+    <string name="settings_about_project_tap">Tap to open the GitHub repository</string>
+    <string name="settings_about_license">License</string>
+    <string name="settings_about_disclaimer_group">Disclaimer</string>
+    <string name="settings_about_disclaimer_1">MengMao Box does not provide, bundle or distribute video sources, nor any online library. Sources are imported by users from public sharing or written by themselves; online content is provided by the corresponding third-party websites.</string>
+    <string name="settings_about_disclaimer_2">Copyright of films, posters, intros and other materials belongs to the original authors or lawful rights holders. Importing a source or accessing content does not imply authorization; use only within authorized or lawful limits and support legitimate viewing.</string>
+    <string name="settings_about_disclaimer_3">Third-party sources and their content are not controlled by this app and may fail due to site changes or network conditions. The app does not guarantee the accuracy, completeness, safety or availability of third-party content; verify sources yourself.</string>
+    <string name="settings_about_disclaimer_4">Users are responsible for imported sources and their usage, shall obey applicable laws and site rules, and shall not use this app to infringe the rights of others, spread illegal content, or copy or distribute works without authorization.</string>
+    <string name="settings_about_disclaimer_5">If suspected infringing content is found, stop accessing it, delete related sources and local cache, and report to the source website. This disclaimer does not exempt any party from legally required responsibilities.</string>
+    <string name="settings_about_privacy_group">Data &amp; Privacy</string>
+    <string name="settings_about_privacy_1">Favorites, watch progress, sources and logs are stored locally. Importing sources, accessing online content or refreshing configs connects to the corresponding websites.</string>
+    <string name="settings_about_privacy_2">The app does not upload diagnostic logs automatically; data is kept on this device only.</string>
+    <string name="settings_about_privacy_3">The app ships with no built-in video sources or online library; use content and sources you are authorized to access.</string>
     <string name="settings_app_version">App version</string>
 
     <string name="settings_preference_title">Preferences</string>
