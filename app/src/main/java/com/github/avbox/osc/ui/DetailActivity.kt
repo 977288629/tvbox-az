@@ -424,7 +424,8 @@ class DetailActivity : BaseActivity(), PageHost {
     }
 
     private fun applyVideoOrientation(portraitVideo: Boolean) {
-        if (!vm.fullScreen.value) return
+        if (!appliedFullscreen) return
+        com.github.avbox.osc.util.AppLog.i("echo-portrait-immersive evaluate portrait=" + portraitVideo + " full=" + appliedFullscreen)
         if (portraitVideo) {
             // 竖屏视频 → 竖屏沉浸：锁竖屏 + 置沉浸态（短剧模式）
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
