@@ -229,7 +229,7 @@ fun HomePage(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val capsuleLogo = remember { ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground) }
+                    val capsuleLogo = remember { ContextCompat.getDrawable(context, R.mipmap.ic_launcher_foreground) }
                     Box(
                         modifier = Modifier
                             .size(26.dp)

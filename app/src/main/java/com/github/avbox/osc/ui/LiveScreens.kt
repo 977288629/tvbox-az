@@ -35,8 +35,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,6 +72,7 @@ import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.player.core.PlayState
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
 import com.github.avbox.osc.ui.components.AVBoxBottomSheet
+import com.github.avbox.osc.ui.components.AvBoxLoader
 import com.github.avbox.osc.ui.components.LoadStateBox
 import com.github.avbox.osc.ui.components.LoadState
 import com.github.avbox.osc.ui.components.LocalSheetDismiss
@@ -97,14 +96,23 @@ internal fun LiveScreen(state: LivePlayUiState, actions: LivePlayActions) {
             .background(background),
     ) {
         when (state.frame.pageState) {
-            PageState.LOADING -> LoadStateBox(
-                state = LoadState.Loading,
-                emptyText = "",
-                errorText = "",
-                retryText = "",
-                modifier = Modifier.fillMaxSize(),
-                loadingContent = { ContainedLoadingIndicator(Modifier.size(64.dp)) },
-            )
+            PageState.LOADING -> {
+                val darkBackdrop = state.frame.isFullBox
+                LoadStateBox(
+                    state = LoadState.Loading,
+                    emptyText = "",
+                    errorText = "",
+                    retryText = "",
+                    modifier = Modifier.fillMaxSize(),
+                    loadingContent = {
+                        AvBoxLoader(
+                            modifier = Modifier.size(160.dp),
+                            inkColor = if (darkBackdrop) Color.White else MaterialTheme.colorScheme.onSurface,
+                            paperColor = if (darkBackdrop) Color(0xFF111111) else MaterialTheme.colorScheme.surface,
+                        )
+                    },
+                )
+            }
 
             PageState.EMPTY -> LoadStateBox(
                 state = LoadState.Error(stringResource(R.string.live_empty_channels)),
@@ -237,13 +245,21 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
-                CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 3.dp)
+                AvBoxLoader(
+                    modifier = Modifier.size(72.dp),
+                    inkColor = Color.White,
+                    paperColor = Color(0xFF111111),
+                )
             }
         }
         if (!state.player.snapshotVisible &&
             (state.player.playState == PlayState.PREPARING || state.player.playState == PlayState.BUFFERING)
         ) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).size(40.dp), color = Color.White)
+            AvBoxLoader(
+                modifier = Modifier.align(Alignment.Center).size(80.dp),
+                inkColor = Color.White,
+                paperColor = Color(0xFF111111),
+            )
         }
         if (state.player.resolutionVisible && state.player.resolutionText.isNotEmpty()) {
             Surface(

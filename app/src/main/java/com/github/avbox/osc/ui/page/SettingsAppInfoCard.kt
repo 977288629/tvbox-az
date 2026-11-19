@@ -59,7 +59,7 @@ internal fun AppInfoHeaderCard(versionName: String) {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    painter = painterResource(R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
                     tint = contentColor,
                     modifier = Modifier
@@ -70,7 +70,7 @@ internal fun AppInfoHeaderCard(versionName: String) {
             Spacer(Modifier.width(20.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "AudioVideoBox",
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineMedium,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
