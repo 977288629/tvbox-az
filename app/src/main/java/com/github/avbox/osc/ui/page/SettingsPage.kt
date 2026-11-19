@@ -203,6 +203,7 @@ fun SettingsPage(
                 SettingsCard(SettingsCardPosition.MIDDLE) {
                     SettingsRow(
                         title = stringResource(R.string.download_manage),
+                        subtitle = stringResource(R.string.settings_download_subtitle),
                         iconRes = R.drawable.ic_download,
                         onClick = { DownloadActivity.start(context) },
                     )

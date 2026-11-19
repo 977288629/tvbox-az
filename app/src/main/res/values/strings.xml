@@ -475,6 +475,7 @@
     <string name="settings_theme_subtitle">修改应用的配色和效果</string>
     <string name="settings_play">播放设置</string>
     <string name="settings_play_subtitle">播放核心和解码方式</string>
+    <string name="settings_download_subtitle">查看和管理下载任务</string>
     <string name="settings_preference_subtitle">修改应用的使用偏好</string>
     <string name="settings_default_page">默认启动页</string>
     <string name="settings_default_page_subtitle">首次打开应用的所在位置</string>

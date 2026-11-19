@@ -475,6 +475,7 @@
     <string name="settings_theme_subtitle">Change the app colors and effects</string>
     <string name="settings_play">Playback Settings</string>
     <string name="settings_play_subtitle">Playback engine and decoding mode</string>
+    <string name="settings_download_subtitle">View and manage download tasks</string>
     <string name="settings_preference_subtitle">Change the app preferences</string>
     <string name="settings_default_page">Default Start Page</string>
     <string name="settings_default_page_subtitle">Where the app opens on launch</string>
