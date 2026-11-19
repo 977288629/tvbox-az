@@ -10,7 +10,6 @@ import com.github.avbox.osc.api.SearchSourcesState
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -53,7 +52,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -72,7 +70,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -99,6 +96,7 @@ import com.github.avbox.osc.ui.ConfigManageActivity
 import com.github.avbox.osc.ui.SearchActivity
 import com.github.avbox.osc.ui.WindowSize
 import com.github.avbox.osc.ui.components.AVBoxBottomSheet
+import com.github.avbox.osc.ui.components.AvBoxLoader
 import com.github.avbox.osc.ui.components.AVBoxOptionMenuAction
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
 import com.github.avbox.osc.ui.components.HeroSpotlight
@@ -314,7 +312,7 @@ fun HomePage(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    ContainedLoadingIndicator(Modifier.size(64.dp))
+                    AvBoxLoader(modifier = Modifier.size(160.dp))
                 }
             }
             sources.isEmpty() -> {
@@ -679,27 +677,7 @@ fun HomePullRefreshIndicator(
         containerColor = Color.Transparent,
         elevation = 0.dp,
     ) {
-        Crossfade(targetState = isRefreshing) { refreshing ->
-            if (refreshing) {
-                ContainedLoadingIndicator(modifier = Modifier.size(48.dp))
-            } else {
-                ContainedLoadingIndicator(
-                    progress = { state.distanceFraction },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .drawWithContent {
-                            val progress = state.distanceFraction
-                            if (progress > 1f) {
-                                rotate(degrees = -(progress - 1f) * 180f) {
-                                    this@drawWithContent.drawContent()
-                                }
-                            } else {
-                                drawContent()
-                            }
-                        },
-                )
-            }
-        }
+        AvBoxLoader(modifier = Modifier.size(48.dp))
     }
 }
 
