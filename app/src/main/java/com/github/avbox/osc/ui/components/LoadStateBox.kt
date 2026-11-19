@@ -36,7 +36,7 @@ fun LoadStateBox(
     emptyIconRes: Int? = null,
     loadingContent: @Composable () -> Unit = { ContainedLoadingIndicator(Modifier.size(64.dp)) },
 ) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         when (state) {
             LoadState.Loading -> loadingContent()
 
