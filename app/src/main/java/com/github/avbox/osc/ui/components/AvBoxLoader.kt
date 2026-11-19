@@ -1,7 +1,7 @@
 package com.github.avbox.osc.ui.components
 
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.max
 
 /**
  * “猫头+摄像机”品牌加载动画（描边绘制 → 分层填充 → 高光弹出，循环往复）。
@@ -36,6 +37,15 @@ import androidx.compose.ui.unit.dp
 private const val ViewBox = 160f
 
 private const val StrokeWidthUnits = 2.5f
+
+/** 描边推进缓动 = 设计稿 cubic-bezier(0.4, 0, 0.2, 1)。 */
+private val DrawEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
+
+/** 填充渐显缓动 = CSS 动画默认 ease。 */
+private val FillRampEasing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)
+
+/** 浮动/高光弹出缓动 = ease-in-out。 */
+private val SoftEasing = FastOutSlowInEasing
 
 private enum class PartTone { INK, PAPER }
 
@@ -84,7 +94,7 @@ private fun buildLoaderParts(): List<LoaderPart> = listOf(
 private fun plateau(progress: Float): Float = when {
     progress <= 0.25f -> 0f
     progress >= 0.75f -> 1f
-    else -> (progress - 0.25f) / 0.5f
+    else -> FillRampEasing.transform((progress - 0.25f) / 0.5f)
 }
 
 private fun DrawScope.drawLoaderPart(
@@ -96,6 +106,15 @@ private fun DrawScope.drawLoaderPart(
     measure: PathMeasure,
     scratch: Path,
 ) {
+    // 描边先于填充（与 SVG 文档顺序一致）：填充盖住描边内半侧，轮廓只剩外侧细线。
+    if (cycle > 0f) {
+        measure.setPath(part.path, true)
+        val length = measure.length
+        scratch.rewind()
+        if (length > 0f && measure.getSegment(0f, length * cycle, scratch, true)) {
+            drawPath(scratch, inkColor, style = stroke)
+        }
+    }
     val tone = when (part.tone) {
         PartTone.INK -> inkColor
         PartTone.PAPER -> paperColor
@@ -103,14 +122,6 @@ private fun DrawScope.drawLoaderPart(
     val local = if (part.fillDelay >= 1f) 0f else (cycle - part.fillDelay) / (1f - part.fillDelay)
     val alpha = plateau(local.coerceIn(0f, 1f))
     if (alpha > 0f) drawPath(part.path, tone, alpha = alpha)
-    if (cycle > 0f) {
-        measure.setPath(part.path, false)
-        val length = measure.length
-        scratch.rewind()
-        if (length > 0f && measure.getSegment(0f, length * cycle, scratch, true)) {
-            drawPath(scratch, inkColor, style = stroke)
-        }
-    }
 }
 
 @Composable
@@ -126,17 +137,17 @@ fun AvBoxLoader(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2500, easing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)),
+            animation = tween(durationMillis = 2500, easing = DrawEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "avboxLoaderCycle",
     )
-    // 上下浮动：3s 一个来回。
+    // 上下浮动：3s 一个来回（ease-in-out 摆动感）。
     val floatPhase by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = LinearEasing),
+            animation = tween(durationMillis = 1500, easing = SoftEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "avboxLoaderFloat",
@@ -153,16 +164,18 @@ fun AvBoxLoader(
                 translationY = -floatPhase * 4.dp.toPx() * (this.size.height / unitPx)
             },
     ) {
-        val stroke = Stroke(width = StrokeWidthUnits, cap = StrokeCap.Round, join = StrokeJoin.Round)
         val scaleFactor = this.size.minDimension / ViewBox
+        // 小尺寸下描边不低于 2px，避免细线在低倍率下发虚。
+        val strokeUnits = max(StrokeWidthUnits, 2.dp.toPx() / scaleFactor)
+        val stroke = Stroke(width = strokeUnits, cap = StrokeCap.Round, join = StrokeJoin.Round)
         scale(scaleFactor, scaleFactor, pivot = Offset.Zero) {
             parts.forEach { part ->
                 drawLoaderPart(part, cycle, inkColor, paperColor, stroke, measure, scratch)
             }
-            // 高光点：循环末段弹出（scale 0.8 → 1）。
-            val pop = ((cycle - 0.85f) / 0.15f).coerceIn(0f, 1f)
-            if (pop > 0f) {
-                val radius = 1.6f * (0.8f + 0.2f * pop)
+            // 高光点：循环末段弹出（scale 0.8 → 1，ease-in-out）。
+            val pop = SoftEasing.transform(((cycle - 0.85f) / 0.15f).coerceIn(0f, 1f))
+            val radius = 1.6f * (0.8f + 0.2f * pop)
+            if (pop > 0f && radius * scaleFactor >= 1.2f) {
                 drawCircle(paperColor, radius = radius, center = Offset(73f, 92f), alpha = pop)
             }
         }
