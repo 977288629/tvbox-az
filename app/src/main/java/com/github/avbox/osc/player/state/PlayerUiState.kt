@@ -107,6 +107,8 @@ class PlayerUiState {
         private set
     var sessionVod: VodInfo? by mutableStateOf(null)
         private set
+
+    var portraitImmersive: Boolean by mutableStateOf(false)
     var previewMode: Boolean by mutableStateOf(false)
         private set
     var timeStartText: String by mutableStateOf("")
@@ -449,6 +451,10 @@ class PlayerUiState {
 
     fun updateInfoOsdFooter(value: Pair<String, String>?) {
         infoOsdFooter = value
+    }
+
+    fun updatePortraitImmersive(value: Boolean) {
+        portraitImmersive = value
     }
 
     fun updatePreviewMode(value: Boolean) {

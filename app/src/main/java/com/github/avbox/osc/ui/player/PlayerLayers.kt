@@ -216,7 +216,7 @@ fun PlayerSideButtons(state: PlayerUiState, actions: PlayerActions, iconBox: Dp)
             startSide = true,
             edge = edge,
             iconSize = iconSize,
-            visible = shown && !state.locked,
+            visible = shown && !state.locked && !state.portraitImmersive,
             onClick = actions::onRotateClicked,
         )
         SideButton(

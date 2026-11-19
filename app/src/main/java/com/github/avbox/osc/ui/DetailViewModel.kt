@@ -101,6 +101,15 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     val vodUi: StateFlow<VodUiSnapshot?> = _vodUi.asStateFlow()
     private val _fullScreen = MutableStateFlow(false)
     val fullScreen = _fullScreen.asStateFlow()
+    private val _portraitImmersive = MutableStateFlow(false)
+    val portraitImmersive: StateFlow<Boolean> = _portraitImmersive.asStateFlow()
+
+    fun setPortraitImmersive(value: Boolean) {
+        if (_portraitImmersive.value != value) {
+            _portraitImmersive.value = value
+            com.github.avbox.osc.util.AppLog.i("echo-portrait-immersive " + (if (value) "enter" else "exit"))
+        }
+    }
     private val _rotating = MutableStateFlow(false)
     val rotating: StateFlow<Boolean> = _rotating.asStateFlow()
     private val _enteringFullscreen = MutableStateFlow(false)

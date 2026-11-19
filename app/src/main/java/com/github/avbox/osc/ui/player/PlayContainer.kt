@@ -84,6 +84,9 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
 
     var videoSizeReadyListener: ((Boolean) -> Unit)? = null
 
+    // 竖屏沉浸模式下切集后，视频尺寸重置需重新通知一次（用于方向/沉浸态保态）
+    var portraitReArmListener: (() -> Unit)? = null
+
     var touchBlocked = false
 
     private var ownedPlaybackKey: String? = null
@@ -527,6 +530,7 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
         }
         val sameVodSwitch = !scheduler.isCastPrepareOnly() && isSameVodEpisodeSwitch(session)
         kernelView?.forgetVideoSize()
+        if (sameVodSwitch) portraitReArmListener?.invoke()
         engineRef.setData(session)
         syncSessionVod()
         playerController.setPlayerConfig(requireNotNull(scheduler.playerCfg()) { "player cfg missing on setData" })

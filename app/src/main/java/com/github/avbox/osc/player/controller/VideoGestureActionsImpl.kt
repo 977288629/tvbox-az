@@ -52,6 +52,10 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
 
     private var shownHint: HintKind = HintKind.NONE
 
+    companion object {
+        private const val EPISODE_SWIPE_COOLDOWN_MS = 700L
+    }
+
     private val audioManager: AudioManager? by lazy {
         host.context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
     }
@@ -90,6 +94,7 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
             previewMode = host.state.previewMode,
             paused = paused,
             gestureEnabled = host.gestureEnabled(),
+            immersive = host.state.portraitImmersive && !host.state.previewMode,
             verticalSlidingDisabled = GestureHelper.isControlDisabled(),
             width = width,
             height = height,
@@ -203,6 +208,24 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
 
     override fun onZoomEnd() {
         host.actions.hideSlideHint()
+    }
+
+    private var lastEpisodeSwitchAt = 0L
+
+    override fun onSwipeNext() {
+        val now = System.currentTimeMillis()
+        if (now - lastEpisodeSwitchAt < EPISODE_SWIPE_COOLDOWN_MS) return
+        lastEpisodeSwitchAt = now
+        AppLog.i("echo-portrait-immersive swipe next")
+        host.actions.onNextClicked()
+    }
+
+    override fun onSwipePrevious() {
+        val now = System.currentTimeMillis()
+        if (now - lastEpisodeSwitchAt < EPISODE_SWIPE_COOLDOWN_MS) return
+        lastEpisodeSwitchAt = now
+        AppLog.i("echo-portrait-immersive swipe previous")
+        host.actions.onPreClicked()
     }
 
     override fun onVolumeSlide(totalDeltaY: Float) {

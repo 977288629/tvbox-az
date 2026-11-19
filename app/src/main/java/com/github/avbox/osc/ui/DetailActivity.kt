@@ -384,6 +384,8 @@ class DetailActivity : BaseActivity(), PageHost {
             armVideoSizeWatch()
             hideSysBar()
         } else {
+            vm.setPortraitImmersive(false)
+            syncImmersiveToPlayer(false)
             videoSizeWatchArmed = false
             playContainer?.videoSizeReadyListener = null
             val controller = WindowCompat.getInsetsController(window, window.decorView)
@@ -399,11 +401,13 @@ class DetailActivity : BaseActivity(), PageHost {
 
     private fun armVideoSizeWatch() {
         val container = playContainer ?: return
+        container.portraitReArmListener = {
+            if (vm.portraitImmersive.value && vm.fullScreen.value) armVideoSizeWatch()
+        }
         if (container.hasVideoSize()) {
             applyVideoOrientation(container.isPortraitVideo())
             return
         }
-        if (videoSizeWatchArmed) return
         videoSizeWatchArmed = true
         container.videoSizeReadyListener = { portraitVideo -> onVideoSizeReady(portraitVideo) }
     }
@@ -415,9 +419,22 @@ class DetailActivity : BaseActivity(), PageHost {
         applyVideoOrientation(portraitVideo)
     }
 
+    private fun syncImmersiveToPlayer(value: Boolean) {
+        playContainer?.playerController?.getUiState()?.updatePortraitImmersive(value)
+    }
+
     private fun applyVideoOrientation(portraitVideo: Boolean) {
-        if (!vm.fullScreen.value || portraitVideo) return
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        if (!vm.fullScreen.value) return
+        if (portraitVideo) {
+            // 竖屏视频 → 竖屏沉浸：锁竖屏 + 置沉浸态（短剧模式）
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            vm.setPortraitImmersive(true)
+            syncImmersiveToPlayer(true)
+        } else {
+            vm.setPortraitImmersive(false)
+            syncImmersiveToPlayer(false)
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

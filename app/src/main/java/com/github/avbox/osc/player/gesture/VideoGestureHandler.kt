@@ -27,6 +27,10 @@ interface VideoGestureActions {
     fun onZoom(scale: Float)
 
     fun onZoomEnd()
+
+    fun onSwipeNext()
+
+    fun onSwipePrevious()
 }
 
 data class VideoGestureSession(
@@ -38,6 +42,7 @@ data class VideoGestureSession(
     val previewMode: Boolean,
     val paused: Boolean,
     val gestureEnabled: Boolean,
+    val immersive: Boolean,
     val verticalSlidingDisabled: Boolean,
     val width: Int,
     val height: Int,
@@ -60,7 +65,7 @@ class VideoGestureHandler(
     private val commitFraction: Float = 0.10f,
 ) {
 
-    enum class Mode { UNDECIDED, SEEK, BRIGHTNESS, VOLUME, ZOOM, NONE }
+    enum class Mode { UNDECIDED, SEEK, BRIGHTNESS, VOLUME, ZOOM, EPISODE, NONE }
 
     private var session: VideoGestureSession? = null
     private var mode = Mode.UNDECIDED
@@ -70,6 +75,8 @@ class VideoGestureHandler(
     private var moved = false
     private var longPressed = false
     private var zoomStartDist = 0f
+    private var episodeDy = 0f
+    private var lastEpisodeDy = 0f
 
     var isZooming: Boolean = false
         private set
@@ -98,6 +105,8 @@ class VideoGestureHandler(
         this.longPressed = false
         this.isZooming = false
         this.zoomedThisSession = false
+        this.episodeDy = 0f
+        this.lastEpisodeDy = 0f
 
         if (session.locked) return GestureVerdict.CLAIMED
         if (session.edge) return GestureVerdict.IGNORE
@@ -146,6 +155,11 @@ class VideoGestureHandler(
                 actions.onVolumeSlide(dy)
                 true
             }
+            Mode.EPISODE -> {
+                episodeDy += dy - lastEpisodeDy
+                lastEpisodeDy = dy
+                true
+            }
             Mode.ZOOM, Mode.NONE, Mode.UNDECIDED -> false
         }
     }
@@ -159,6 +173,12 @@ class VideoGestureHandler(
         }
         if (s.fromTopBand) return Mode.NONE
         if (s.previewMode) return Mode.NONE
+        // 竖屏沉浸：左 80% 纵向滑切集，右侧边缘保留音量
+        if (s.immersive) {
+            val mode = if (lastX >= s.screenWidth * 0.8f) Mode.VOLUME else Mode.EPISODE
+            if (mode == Mode.EPISODE) lastEpisodeDy = dy
+            return mode
+        }
         if (!s.fullScreen && !s.enableInNormal) return Mode.NONE
         if (s.verticalSlidingDisabled) return Mode.NONE
         return if (lastX >= s.screenWidth / 2f) Mode.VOLUME else Mode.BRIGHTNESS
@@ -213,6 +233,12 @@ class VideoGestureHandler(
             return EndResult.NONE
         }
 
+        if (endedMode == Mode.EPISODE && kotlin.math.abs(episodeDy) >= EPISODE_COMMIT_PX) {
+            tapPending = false
+            if (episodeDy > 0f) actions.onSwipeNext() else actions.onSwipePrevious()
+            return EndResult.NONE
+        }
+
         if (longPressed) {
             longPressed = false
             tapPending = false
@@ -260,6 +286,10 @@ class VideoGestureHandler(
         lastTapTime = -1L
         actions.onSingleTap()
         return true
+    }
+
+    companion object {
+        private const val EPISODE_COMMIT_PX = 80f
     }
 
     fun withinDoubleTapWindow(nowMs: Long): Boolean {
