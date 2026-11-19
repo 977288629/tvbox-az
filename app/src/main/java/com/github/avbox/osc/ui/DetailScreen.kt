@@ -167,6 +167,8 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                 is PlaybackCommand.ClearSourceSwitchTip -> c.clearSourceSwitchTip()
                 is PlaybackCommand.SetEpisodeSheetOpen -> c.setEpisodeSheetOpen(command.open)
                 is PlaybackCommand.SelectQuality -> c.selectQuality(command.position)
+                is PlaybackCommand.ShowPlayerTip -> c.setTip(command.text, command.loading, command.err)
+                is PlaybackCommand.ClearPlayerTip -> c.hideTipOnUiThread()
             }
         }
     }

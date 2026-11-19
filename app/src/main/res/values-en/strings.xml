@@ -230,6 +230,8 @@
 
     <string name="detail_switch_site">Switched to site %1$s</string>
     <string name="detail_switching_source">Switching source</string>
+    <string name="detail_fallback_searching">This line cannot play, searching other lines…</string>
+    <string name="detail_fallback_exhausted">No playable line found, please retry later</string>
     <string name="detail_switch_failed">Source switch failed. Keeping the current source</string>
     <string name="detail_switch_failed_reason">Source switch failed: %1$s. Keeping the current source</string>
     <string name="toast_removed_from_collect">Removed from favorites</string>

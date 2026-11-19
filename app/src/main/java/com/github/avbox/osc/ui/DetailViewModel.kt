@@ -1087,6 +1087,11 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         val title = (if (vodInfo?.name.isNullOrEmpty()) vodName else vodInfo?.name).orEmpty().trim()
         if (title.isEmpty()) return false
         fallbackKeepCurrentDetail = fromLinesExhausted && vodInfo != null && !vodInfo?.seriesMap.isNullOrEmpty()
+        if (fromLinesExhausted) {
+            // 全线路失败后进入静默 fallback 搜索，画面可能长时间黑屏，
+            // 必须在播放器上给出可见反馈（播放成功时引擎会自动隐藏 tip）。
+            sendCommand(PlaybackCommand.ShowPlayerTip(str(R.string.detail_fallback_searching), true, false))
+        }
         captureFallbackEpisode()
         searchTitle = title
         usedSourceKeys.add(sourceKey)
@@ -1140,7 +1145,11 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         if (!keep && rollbackManualSwitch()) return
         if (!keep && _pageState.value != PageState.Ready) {
             enterEmpty()
+            return
         }
+        // 详情页保留/已就绪但没有找到任何可播的替代线路：把“查找中”tip 升级为终态错误，
+        // 避免播放器黑屏且无任何说明。
+        sendCommand(PlaybackCommand.ShowPlayerTip(str(R.string.detail_fallback_exhausted), false, true))
     }
 
     private fun scheduleDetailTimeout() {

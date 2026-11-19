@@ -230,6 +230,8 @@
 
     <string name="detail_switch_site">站点切换至%1$s</string>
     <string name="detail_switching_source">正在切换片源</string>
+    <string name="detail_fallback_searching">本线路无法播放，正在查找其他线路…</string>
+    <string name="detail_fallback_exhausted">未找到可播放的其他线路，请稍后重试</string>
     <string name="detail_switch_failed">换源失败，继续原片源</string>
     <string name="detail_switch_failed_reason">换源失败：%1$s，继续原片源</string>
     <string name="toast_removed_from_collect">已移除收藏夹</string>

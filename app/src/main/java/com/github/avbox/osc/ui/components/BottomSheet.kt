@@ -212,6 +212,13 @@ class SheetHostState {
         private set
 
     internal fun submit(newRequest: SheetRequest) {
+        val current = request
+        if (current != null && current.id !== newRequest.id) {
+            // 单槽 host 被新面板顶掉旧面板时，必须让旧面板的显隐状态归位，
+            // 否则旧面板的 visible 标志永远停在 true，其触发按钮变成 no-op，
+            // 表现为“面板再也不出现，重启才恢复”。
+            current.onDismissRequest()
+        }
         request = newRequest
     }
 
@@ -366,11 +373,13 @@ private fun SheetSurface(
                 .fillMaxSize()
                 .graphicsLayer { alpha = 1f - collapse.value }
                 .background(scrimColor)
-                .pointerInput(Unit) {
+                .pointerInput(entered) {
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent()
-                            if (event.changes.any { it.positionChanged() }) {
+                            // 入场动画期间 clickable 尚未 enabled，必须拦截全部点按，
+                            // 否则 tap 会穿透 scrim 触发下层内容（如再开一个 sheet 抢占 host）。
+                            if (!entered || event.changes.any { it.positionChanged() }) {
                                 event.changes.forEach { it.consume() }
                             }
                         }

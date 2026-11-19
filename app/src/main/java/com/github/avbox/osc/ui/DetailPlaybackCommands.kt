@@ -11,6 +11,11 @@ sealed interface PlaybackCommand {
     data class SetEpisodeSheetOpen(val open: Boolean) : PlaybackCommand
 
     data class SelectQuality(val position: Int) : PlaybackCommand
+
+    /** 播放器画面内的常驻提示条（fallback 查找中/穷尽等），播放成功后由引擎自动隐藏。 */
+    data class ShowPlayerTip(val text: String, val loading: Boolean, val err: Boolean) : PlaybackCommand
+
+    data object ClearPlayerTip : PlaybackCommand
 }
 
 data class DetailPlaybackFacts(
