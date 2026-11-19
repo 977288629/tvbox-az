@@ -121,6 +121,7 @@ import com.github.avbox.osc.ui.components.VodCard
 import com.github.avbox.osc.ui.components.VodCardMenu
 import com.github.avbox.osc.ui.components.clearFocusOnDrag
 import com.github.avbox.osc.ui.settings.UiSettingsState
+import com.github.avbox.osc.util.HomeImagePrefetch
 import com.github.avbox.osc.ui.components.glassTopBarSurface
 import com.github.avbox.osc.ui.components.heroSpotlightHeight
 import com.github.avbox.osc.ui.components.rememberVodCardMenuState
@@ -164,7 +165,17 @@ fun HomePage(
     val pageLoading by vm.pageLoading.collectAsStateWithLifecycle()
     val sortLoadFailed by vm.sortLoadFailed.collectAsStateWithLifecycle()
     val homeLayout by HomeSettings.layoutFlow.collectAsStateWithLifecycle()
+    LaunchedEffect(currentSource?.key) { com.github.avbox.osc.util.HomeImagePrefetch.reset() }
     LaunchedEffect(homeLayout) { vm.onLayoutChanged() }
+
+    // 首屏图片后台预热：数据就绪后先把前 N 张解码进缓存，避免滑动时集中解码卡顿
+    LaunchedEffect(rec.videos, partitions) {
+        val images = ArrayList<String>()
+        rec.videos.take(4).mapNotNull { it.pic }.let { images.addAll(it) }
+        partitions.forEach { p -> p.videos.take(3).mapNotNull { it.pic }.let { images.addAll(it) } }
+        val key = images.take(48).joinToString("|")
+        com.github.avbox.osc.util.HomeImagePrefetch.prefetch(images, key)
+    }
     LaunchedEffect(vm) {
         vm.pageErrorEvents.collect { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
