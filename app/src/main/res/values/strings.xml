@@ -708,5 +708,5 @@
     <string name="detail_switch_fastest">最快 %1$dms</string>
     <string name="settings_volume_boost">音量增强</string>
     <string name="settings_volume_boost_subtitle">提升偏小音量的片源</string>
-    <string name="portrait_immersive_hint">上滑下一集 · 右侧可调音量</string>
+    <string name="portrait_immersive_hint">下滑下一集 · 上滑上一集 · 右侧音量</string>
 </resources>

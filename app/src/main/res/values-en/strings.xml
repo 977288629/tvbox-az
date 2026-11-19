@@ -708,5 +708,5 @@
     <string name="detail_switch_fastest">Fastest %1$dms</string>
     <string name="settings_volume_boost">Volume boost</string>
     <string name="settings_volume_boost_subtitle">Boost sources with low volume</string>
-    <string name="portrait_immersive_hint">Swipe up for next · right edge for volume</string>
+    <string name="portrait_immersive_hint">Swipe down: next · up: previous · right edge: volume</string>
 </resources>
