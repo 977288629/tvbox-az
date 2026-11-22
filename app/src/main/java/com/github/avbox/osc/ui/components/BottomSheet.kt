@@ -374,14 +374,14 @@ private fun SheetSurface(
                 .graphicsLayer { alpha = 1f - collapse.value }
                 .background(scrimColor)
                 .pointerInput(entered) {
+                    // 只在入场动画期间拦截：此时 clickable 尚未 enabled，不拦会让 tap 穿透
+                    // scrim 触发下层内容（如再开一个 sheet 抢占 host）。
+                    // 入场结束后必须完全放手，否则会消费面板内输入框的移动事件，
+                    // 导致点搜索框拿不到焦点、键盘不弹。
+                    if (entered) return@pointerInput
                     awaitPointerEventScope {
                         while (true) {
-                            val event = awaitPointerEvent()
-                            // 入场动画期间 clickable 尚未 enabled，必须拦截全部点按，
-                            // 否则 tap 会穿透 scrim 触发下层内容（如再开一个 sheet 抢占 host）。
-                            if (!entered || event.changes.any { it.positionChanged() }) {
-                                event.changes.forEach { it.consume() }
-                            }
+                            awaitPointerEvent().changes.forEach { it.consume() }
                         }
                     }
                 }

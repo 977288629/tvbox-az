@@ -11,12 +11,21 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -49,6 +58,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -70,9 +80,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -161,6 +176,7 @@ fun HomePage(
     val pullState = rememberPullToRefreshState()
 
     val pageLoading by vm.pageLoading.collectAsStateWithLifecycle()
+    val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val sortLoadFailed by vm.sortLoadFailed.collectAsStateWithLifecycle()
     val homeLayout by HomeSettings.layoutFlow.collectAsStateWithLifecycle()
     LaunchedEffect(currentSource?.key) { com.github.avbox.osc.util.HomeImagePrefetch.reset() }
@@ -349,6 +365,7 @@ fun HomePage(
                         topPadding = topPad,
                         contentPadding = contentPadding,
                         pullState = pullState,
+                        isRefreshing = refreshing,
                         onCardClick = { video -> handleCardClick(vm, video, context) },
                         onCardLongClick = { video -> vodMenu.show(video) },
                     )
@@ -358,9 +375,9 @@ fun HomePage(
                 modifier = Modifier
                     .fillMaxSize()
                     .pullToRefresh(
-                        isRefreshing = false,
+                        isRefreshing = refreshing,
                         state = pullState,
-                        onRefresh = { vm.reload() },
+                        onRefresh = { vm.refresh() },
                     ),
                 contentPadding = PaddingValues(
                     start = 0.dp,
@@ -489,6 +506,7 @@ fun HomePage(
                                     state = rec.state,
                                     videos = rec.videos.drop(HomeViewModel.HERO_VIDEO_COUNT),
                                     onLoadMore = {},
+                                    showFooter = false,
                                     onCardClick = { video -> handleCardClick(vm, video, context) },
                                     onCardLongClick = { video -> vodMenu.show(video) },
                                     modifier = Modifier.padding(start = navStart),
@@ -506,6 +524,7 @@ fun HomePage(
                                 onCardClick = { video -> handleCardClick(vm, video, context) },
                                 onCardLongClick = { video -> vodMenu.show(video) },
                                 onRetry = { vm.retryPartition(p) },
+                                hasMore = p.hasMore,
                                 modifier = Modifier.padding(start = navStart),
                             )
                         }
@@ -518,7 +537,7 @@ fun HomePage(
         if (sources.isNotEmpty() && homeLayout == HomeSettings.HomeLayout.Horizontal) {
             HomePullRefreshIndicator(
                 state = pullState,
-                isRefreshing = false,
+                isRefreshing = refreshing,
                 topPadding = topPad,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
@@ -667,17 +686,120 @@ fun HomePullRefreshIndicator(
     topPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
+    // 拖拽阶段按进度填充圆环；刷新阶段圆环持续旋转 + 中心品牌猫头动效
+    val progress = if (isRefreshing) 1f else state.distanceFraction.coerceIn(0f, 1f)
+    val visible = isRefreshing || progress > 0.02f
+    val spin = rememberInfiniteTransition(label = "homePullSpin")
+    val spinAngle by spin.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "homePullSpinAngle",
+    )
+    val appearScale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.5f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "homePullScale",
+    )
+    val appearAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(140),
+        label = "homePullAlpha",
+    )
     PullToRefreshDefaults.IndicatorBox(
         state = state,
         isRefreshing = isRefreshing,
         modifier = modifier
             .offset(y = topPadding)
-            .size(48.dp),
+            .size(52.dp),
         shape = RectangleShape,
         containerColor = Color.Transparent,
         elevation = 0.dp,
     ) {
-        AvBoxLoader(modifier = Modifier.size(48.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = appearScale
+                    scaleY = appearScale
+                    alpha = appearAlpha
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            val trackColor = MaterialTheme.colorScheme.surfaceVariant
+            val arcColor = MaterialTheme.colorScheme.primary
+            val plateColor = MaterialTheme.colorScheme.surfaceBright
+            // 实心底衬：hero 海报背景复杂，透明底会让细圆环和猫头看不清
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(plateColor),
+            )
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val stroke = 4.dp.toPx()
+                val inset = stroke / 2f + 1.dp.toPx()
+                drawCircle(
+                    color = trackColor,
+                    radius = (size.minDimension - stroke) / 2f - 1.dp.toPx(),
+                    style = Stroke(width = stroke),
+                )
+                val sweep = if (isRefreshing) 110f else 340f * progress
+                if (sweep > 0.5f) {
+                    drawArc(
+                        color = arcColor,
+                        startAngle = if (isRefreshing) spinAngle - 90f else -90f,
+                        sweepAngle = sweep,
+                        useCenter = false,
+                        topLeft = Offset(inset, inset),
+                        size = Size(size.width - inset * 2, size.height - inset * 2),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
+            }
+            AvBoxLoader(modifier = Modifier.size(34.dp))
+        }
+    }
+}
+
+/**
+ * “加载下一页”页脚：使用与首页下拉/整页加载一致的品牌猫头 [AvBoxLoader]。
+ * 页脚位于横滑行尾（懒加载，一次只有一个进入视口），不存在多个重动画并发掉帧问题。
+ */
+@Composable
+internal fun HomeLoadMoreFooter(
+    hasMore: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.height(56.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (hasMore) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AvBoxLoader(modifier = Modifier.size(28.dp))
+                Text(
+                    text = stringResource(R.string.common_loading_more),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            Text(
+                text = stringResource(R.string.common_no_more),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -694,6 +816,8 @@ private fun PartitionSection(
     onCardClick: (Movie.Video) -> Unit,
     onCardLongClick: (Movie.Video) -> Unit,
     onRetry: (() -> Unit)? = null,
+    hasMore: Boolean = true,
+    showFooter: Boolean = true,
     cardWidth: Dp = 128.dp,
     modifier: Modifier = Modifier,
 ) {
@@ -782,7 +906,13 @@ private fun PartitionSection(
                             }
                         }
                     }
-                    LaunchedEffect(videos.size) { onLoadMore() }
+                    // 只在用户滑到网格末尾时加载下一页，不能用 videos.size 自动触发，
+                    // 否则 hasMore 恒 true 的源会无限自动翻页、疯狂加载把页面拖卡。
+                    if (hasMore) LaunchedEffect(videos.size) { onLoadMore() }
+                    if (showFooter) HomeLoadMoreFooter(
+                        hasMore = hasMore,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             } else LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
@@ -797,8 +927,17 @@ private fun PartitionSection(
                         style = cardStyle,
                     )
                 }
-                item(key = "more_$title") {
-                    LaunchedEffect(videos.size) { onLoadMore() }
+                // 横滑列表的“加载下一页”动效放在行尾：跟着横向内容走，
+                // 滑到末尾自然看到转圈，符合横滑语义，不会像纵向页脚那样误导。
+                // 触发同样在行尾——滑到才加载，离开视口即释放，不会无限自动翻页。
+                if (showFooter) {
+                    item(key = "more_$title") {
+                        if (hasMore) LaunchedEffect(videos.size) { onLoadMore() }
+                        HomeLoadMoreFooter(
+                            hasMore = hasMore,
+                            modifier = Modifier.width(itemWidth),
+                        )
+                    }
                 }
             }
         }
@@ -1178,10 +1317,11 @@ private fun LazyListScope.homeCategoryGrid(
                     }
                 }
             }
-            if (partition.hasMore) {
-                item(key = "category_load_more") {
+            item(key = "category_load_more") {
+                if (partition.hasMore) {
                     LaunchedEffect(videos.size) { onLoadMore() }
                 }
+                HomeLoadMoreFooter(hasMore = partition.hasMore, modifier = Modifier.fillMaxWidth())
             }
         }
     }

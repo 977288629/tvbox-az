@@ -103,6 +103,7 @@ fun HomeGridLayout(
     topPadding: Dp,
     contentPadding: PaddingValues,
     pullState: PullToRefreshState,
+    isRefreshing: Boolean,
     onCardClick: (Movie.Video) -> Unit,
     onCardLongClick: (Movie.Video) -> Unit,
 ) {
@@ -163,9 +164,9 @@ fun HomeGridLayout(
                 modifier = Modifier
                     .fillMaxSize()
                     .pullToRefresh(
-                        isRefreshing = false,
+                        isRefreshing = isRefreshing,
                         state = pullState,
-                        onRefresh = { vm.reload() },
+                        onRefresh = { vm.refresh() },
                     ),
                 contentPadding = PaddingValues(
                     start = 16.dp + navStart,
@@ -244,18 +245,7 @@ fun HomeGridLayout(
                             LaunchedEffect(videos.size) {
                                 if (tabPartition.hasMore) vm.loadMorePartition(tabPartition)
                             }
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = stringResource(
-                    if (tabPartition.hasMore) R.string.common_loading_more else R.string.common_no_more,
-                ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                            HomeLoadMoreFooter(hasMore = tabPartition.hasMore, modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }
@@ -275,7 +265,7 @@ fun HomeGridLayout(
         }
         HomePullRefreshIndicator(
             state = pullState,
-            isRefreshing = false,
+            isRefreshing = isRefreshing,
             topPadding = topPadding + HomeGridTabRowHeight,
             modifier = Modifier.align(Alignment.TopCenter),
         )

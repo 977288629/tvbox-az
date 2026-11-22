@@ -36,7 +36,9 @@ internal fun ComponentActivity.enableTransparentEdgeToEdge() {
             android.graphics.Color.TRANSPARENT,
         ),
     )
-    window.setBackgroundDrawable(ColorDrawable(AppThemeState.windowSurfaceArgb(this)))
+    // 窗口背景保持透明：让底部系统手势区透出、不再显示一层实色底。
+    // 各页面 Compose 根布局自行铺 surface 背景，内容区视觉不受影响。
+    window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 }
 
 @Composable

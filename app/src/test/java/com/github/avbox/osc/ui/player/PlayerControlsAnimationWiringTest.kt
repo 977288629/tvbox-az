@@ -94,6 +94,11 @@ class PlayerControlsAnimationWiringTest {
         override fun onSeekCancel() { calls += "seekCancel" }
         override fun onBrightnessSlide(totalDeltaY: Float) { calls += "brightness" }
         override fun onVolumeSlide(totalDeltaY: Float) { calls += "volume" }
+        override fun onZoomStart() { calls += "zoomStart" }
+        override fun onZoom(scale: Float) { calls += "zoom:$scale" }
+        override fun onZoomEnd() { calls += "zoomEnd" }
+        override fun onSwipeNext() { calls += "swipeNext" }
+        override fun onSwipePrevious() { calls += "swipePrevious" }
     }
 
     private fun alwaysClaim(): (IntSize, Float) -> VideoGestureSession = { _, _ ->
@@ -106,6 +111,7 @@ class PlayerControlsAnimationWiringTest {
             previewMode = false,
             paused = false,
             gestureEnabled = true,
+            immersive = false,
             verticalSlidingDisabled = false,
             width = 1000,
             height = 600,

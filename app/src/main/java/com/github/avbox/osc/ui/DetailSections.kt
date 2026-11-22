@@ -1,3 +1,8 @@
+@file:OptIn(
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+)
+
 package com.github.avbox.osc.ui
 
 import androidx.compose.foundation.BorderStroke
@@ -7,6 +12,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -117,13 +124,14 @@ internal fun DetailItemCard(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    minWidth: androidx.compose.ui.unit.Dp = DetailItemMinWidth,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(16.dp)
     Column(
         modifier = modifier
             .height(DetailItemHeight)
-            .defaultMinSize(minWidth = DetailItemMinWidth)
+            .defaultMinSize(minWidth = minWidth)
             .detailGlass(shape)
             .then(
                 if (selected) {
@@ -141,11 +149,17 @@ internal fun DetailItemCard(
 }
 
 @Composable
-private fun SourceCard(name: String, selected: Boolean, onClick: () -> Unit) {
+private fun SourceCard(
+    name: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     DetailItemCard(
         selected = selected,
         onClick = onClick,
-        modifier = Modifier.width(DetailItemWidth),
+        modifier = modifier,
+        minWidth = 0.dp,
     ) {
         Text(
             text = name,
@@ -163,10 +177,6 @@ internal fun SourceSection(vm: DetailViewModel, currentSourceName: String?) {
     val sourceChips by vm.sourceChips.collectAsState()
     val sourcesSearching by vm.sourcesSearching.collectAsState()
     if (!sourcesSearching && sourceChips.isEmpty()) return
-    val listState = rememberLazyListState()
-    LaunchedEffect(currentSourceName) {
-        if (currentSourceName != null) listState.scrollToItem(0)
-    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -195,25 +205,29 @@ internal fun SourceSection(vm: DetailViewModel, currentSourceName: String?) {
                 )
             }
         }
-        LazyRow(
-            state = listState,
-            contentPadding = PaddingValues(horizontal = 16.dp),
+        // 一行两列网格：不再左右横滑，所有候选站点平铺展示
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            maxItemsInEachRow = 2,
         ) {
             if (currentSourceName != null) {
-                item(key = "current") {
-                    SourceCard(
-                        name = currentSourceName,
-                        selected = true,
-                        onClick = {},
-                    )
-                }
+                SourceCard(
+                    name = currentSourceName,
+                    selected = true,
+                    onClick = {},
+                    modifier = Modifier.weight(1f),
+                )
             }
-            itemsIndexed(sourceChips, key = { _, c -> c.key }) { _, chip ->
+            sourceChips.forEach { chip ->
                 SourceCard(
                     name = chip.name,
                     selected = false,
                     onClick = { vm.candidateForKey(chip.key)?.let { vm.switchSource(it) } },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }

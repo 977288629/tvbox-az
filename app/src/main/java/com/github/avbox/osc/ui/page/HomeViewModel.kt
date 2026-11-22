@@ -84,6 +84,8 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
 
     companion object {
         const val HERO_VIDEO_COUNT = 5
+        /** 下拉刷新转圈最短展示时长：数据通常 200ms 内返回，太短会像没反应。 */
+        const val MIN_REFRESH_SHOW_MS = 900L
     }
 
     private val _currentSource = MutableStateFlow<SourceBean?>(null)
@@ -105,6 +107,12 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
 
     private val _pageLoading = MutableStateFlow(true)
     val pageLoading = _pageLoading.asStateFlow()
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing = _refreshing.asStateFlow()
+    private var refreshPending = 0
+    private var refreshStartedAt = 0L
+    private var refreshToken = 0
+    private var keepContentOnLoad = false
     private val sortsLoaded = MutableStateFlow(false)
     private val bootReady = MutableStateFlow(false)
     private val _pageErrorEvents = MutableSharedFlow<String>(extraBufferCapacity = 1)
@@ -216,6 +224,18 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         loadHome()
     }
 
+    /** 下拉刷新：保留当前内容重新拉取，期间只显示 48dp 刷新指示器，不切整页加载态。 */
+    fun refresh() {
+        if (_refreshing.value || _pageLoading.value) return
+        AppLog.i("echo--sort-refresh")
+        _refreshing.value = true
+        refreshPending = 0
+        refreshStartedAt = System.currentTimeMillis()
+        refreshToken++
+        SourceRuntimeState.clearRuntimeCache()
+        loadHome(keepContent = true)
+    }
+
     fun switchSource(bean: SourceBean) {
         AppLog.i("echo--sort-switch: key=${bean.key}")
         ApiConfig.get().setSourceBean(bean)
@@ -238,20 +258,30 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         }
     }
 
-    fun loadHome() {
+    fun loadHome(keepContent: Boolean = false) {
         _sources.value = ApiConfig.get().switchSourceBeanList()
         refreshSubscribes()
         val home = ApiConfig.get().homeSourceBean()
         loadingSourceKey = if (home.key.isNullOrEmpty()) null else home.key
         AppLog.i("echo--sort-loadHome: key=${loadingSourceKey} name=${home.name} srcCount=${_sources.value.size}")
         _currentSource.value = home
-        _pageLoading.value = true
+        keepContentOnLoad = keepContent
+        if (keepContent) {
+            _refreshing.value = true
+        } else {
+            refreshToken++ // 让挂起的“最短展示”延迟失效
+            _refreshing.value = false
+            refreshPending = 0
+            _pageLoading.value = true
+        }
         sortsLoaded.value = false
         _sortLoadFailed.value = false
         sortRetried = false
         listRetried.clear()
-        _rec.value = Rec(PartitionState.Loading, emptyList())
-        _partitions.value = emptyList()
+        if (!keepContent) {
+            _rec.value = Rec(PartitionState.Loading, emptyList())
+            _partitions.value = emptyList()
+        }
         val staleLoaders = ArrayList(loaders.values)
         loaders.clear()
         staleLoaders.forEach { it.release() }
@@ -260,7 +290,47 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         sortViewModel.getSort(loadingSourceKey, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
     }
 
+    private fun endRefresh() {
+        if (!_refreshing.value) return
+        // 数据常常在 200ms 内就回来了，转圈一闪而过像没反应；
+        // 保证刷新态至少展示 MIN_REFRESH_SHOW_MS，让“加载中”明确可见。
+        val elapsed = System.currentTimeMillis() - refreshStartedAt
+        val remaining = MIN_REFRESH_SHOW_MS - elapsed
+        if (remaining <= 0) {
+            _refreshing.value = false
+            refreshPending = 0
+            return
+        }
+        val token = refreshToken
+        scope.launch {
+            delay(remaining)
+            if (refreshToken == token && _refreshing.value) {
+                _refreshing.value = false
+                refreshPending = 0
+            }
+        }
+    }
+
+    private fun maybeEndRefresh() {
+        if (!_refreshing.value || refreshPending > 0 || !sortsLoaded.value) return
+        endRefresh()
+    }
+
+    private fun onPartitionRequestDone() {
+        if (refreshPending > 0) refreshPending--
+        maybeEndRefresh()
+    }
+
     private fun onHomeLoadTimeout() {
+        if (_refreshing.value) {
+            // 刷新态下保留旧内容：只把仍处于 Loading 的分区标错并结束刷新，不切整页错误态
+            _partitions.value = _partitions.value.map { p ->
+                if (p.state == PartitionState.Loading) p.copy(state = PartitionState.Error) else p
+            }
+            endRefresh()
+            _pageErrorEvents.tryEmit(str(R.string.home_load_partial_timeout))
+            return
+        }
         val recLoading = _rec.value.state == PartitionState.Loading
         val partitionLoading = _partitions.value.any { it.state == PartitionState.Loading }
         if (!recLoading && !partitionLoading) return
@@ -293,6 +363,10 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         AppLog.i("echo--sort-manual-retry: key=$key")
         _sortLoadFailed.value = false
         sortRetried = true
+        keepContentOnLoad = false
+        refreshToken++ // 取消可能挂起的“最短展示”延迟，立即退出刷新态
+        _refreshing.value = false
+        refreshPending = 0
         _rec.value = Rec(PartitionState.Loading, emptyList())
         sortsLoaded.value = false
         _pageLoading.value = true
@@ -331,9 +405,15 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
 
     private fun onSortResult(absXml: AbsSortXml?) {
         val key = loadingSourceKey
+        val keepContent = keepContentOnLoad
         if (key == null) {
             AppLog.i("echo--sort-null-key: srcName=${_currentSource.value?.name} srcCount=${_sources.value.size} absXml=${absXml != null} reloading=$configReloading")
             if (configReloading) return
+            if (keepContent) {
+                sortsLoaded.value = true
+                endRefresh()
+                return
+            }
             _rec.value = Rec(PartitionState.Empty, emptyList())
             _partitions.value = emptyList()
             _sorts.value = emptyList()
@@ -354,6 +434,13 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 return
             }
             AppLog.i("echo--sort-failed: src=$key")
+            if (keepContent) {
+                // 刷新失败保留旧内容，只提示并结束刷新态
+                _pageErrorEvents.tryEmit(str(R.string.home_load_failed))
+                sortsLoaded.value = true
+                endRefresh()
+                return
+            }
             _sortLoadFailed.value = true
             _rec.value = Rec(PartitionState.Empty, emptyList())
             _partitions.value = emptyList()
@@ -394,6 +481,12 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 return
             }
             AppLog.i("echo--sort-empty-final: src=$key sortSize=${absXml.classes?.sortList?.size}")
+            if (keepContent) {
+                _pageErrorEvents.tryEmit(str(R.string.home_load_failed))
+                sortsLoaded.value = true
+                endRefresh()
+                return
+            }
             _sortLoadFailed.value = true
             _rec.value = Rec(PartitionState.Empty, emptyList())
             _partitions.value = emptyList()
@@ -406,19 +499,25 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         val vertical = HomeSettings.layout == HomeSettings.HomeLayout.Vertical
         val active = _activeSortId.value?.takeIf { id -> visible.any { it.id == id } } ?: visible.firstOrNull()?.id
         _activeSortId.value = active
+        val previous = if (keepContent) _partitions.value.associateBy { it.sort.id } else emptyMap()
         val newPartitions = visible.map { sort ->
-            if (vertical && sort.id != active) {
-                Partition(sort, PartitionState.Idle, emptyList(), Partition.FIRST_PAGE, 0)
-            } else {
-                Partition(sort, PartitionState.Loading, emptyList(), Partition.FIRST_PAGE, 0)
+            val old = previous[sort.id]
+            when {
+                vertical && sort.id != active ->
+                    Partition(sort, PartitionState.Idle, emptyList(), Partition.FIRST_PAGE, 0)
+                old != null && old.videos.isNotEmpty() ->
+                    // 刷新：先留着旧视频，等新结果回来再覆盖，期间不闪骨架屏
+                    old.copy(sort = sort)
+                else -> Partition(sort, PartitionState.Loading, emptyList(), Partition.FIRST_PAGE, 0)
             }
         }
         _partitions.value = newPartitions
-        AppLog.i("echo--sort-partitions: n=${newPartitions.size}")
+        AppLog.i("echo--sort-partitions: n=${newPartitions.size} keep=$keepContent")
         sortsLoaded.value = true
         newPartitions
-            .filter { it.state == PartitionState.Loading }
+            .filter { it.state != PartitionState.Idle }
             .forEach { p -> requestPartition(p, Partition.FIRST_PAGE) }
+        maybeEndRefresh()
     }
 
 
@@ -462,9 +561,14 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         val generation = loadGeneration
         val sourceKey = loadingSourceKey
         val loader = loaders.getOrPut(current.sort.id.orEmpty()) { PartitionLoader(sourceKey, current.sort) }
+        val counted = _refreshing.value && page == Partition.FIRST_PAGE
+        if (counted) refreshPending++
         scope.launch {
             loadSemaphore.withPermit {
-                if (generation != loadGeneration || loader.released || loader.sourceKey != loadingSourceKey) return@withPermit
+                if (generation != loadGeneration || loader.released || loader.sourceKey != loadingSourceKey) {
+                    if (counted) onPartitionRequestDone()
+                    return@withPermit
+                }
                 armWatchdog()
                 val result = suspendCancellableCoroutine<LoaderResult> { cont ->
                     loader.request(page) { r -> if (cont.isActive) cont.resume(r) }
@@ -472,6 +576,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 if (!result.stale) {
                     applyPartitionResult(current.sort.id.orEmpty(), page, result.absXml)
                 }
+                if (counted) onPartitionRequestDone()
             }
         }
     }
@@ -485,7 +590,14 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             } else {
                 AppLog.i("echo--list-failed: sort=$sortId pg=$page")
                 _partitions.value = _partitions.value.map { p ->
-                    if (p.sort.id == sortId) p.copy(state = PartitionState.Error) else p
+                    if (p.sort.id != sortId) {
+                        p
+                    } else if (p.videos.isNotEmpty()) {
+                        // 已有内容时（下拉刷新失败）保留旧列表，不把整块翻成错误态
+                        p.copy(state = PartitionState.Ready)
+                    } else {
+                        p.copy(state = PartitionState.Error)
+                    }
                 }
             }
             return
@@ -518,6 +630,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun loadMorePartition(partition: Partition) {
+        if (_refreshing.value) return
         if (partition.state != PartitionState.Ready || !partition.hasMore) return
         val loader = loaders[partition.sort.id] ?: return
         if (loader.busy) return

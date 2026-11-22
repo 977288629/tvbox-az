@@ -496,7 +496,10 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
             }
         }
         viewModelScope.launch {
-            sourceViewModel.searchResult.flow.collect { onSearchResult(it) }
+            // 换源搜索走的是 searchCaller（startSourceSearch 里调用它的 getSearch），
+            // 结果必须收集 searchCaller 的 flow；之前误收 sourceViewModel 的，
+            // 导致换源搜索结果无人接收、候选站点永远为空。
+            searchCaller.searchResult.flow.collect { onSearchResult(it) }
         }
         observeUiEvents()
         observeEngineState()

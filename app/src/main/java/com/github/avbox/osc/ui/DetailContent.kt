@@ -19,8 +19,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +40,7 @@ import com.github.avbox.osc.R
 import com.github.avbox.osc.ui.player.playerPressEffect
 import com.github.avbox.osc.api.ApiConfig
 import com.github.avbox.osc.data.FollowDays
+import com.github.avbox.osc.ui.components.AVBoxBottomSheet
 import com.github.avbox.osc.ui.components.FollowReminderSheet
 
 internal val HeroScrollFadeDistance = 300.dp
@@ -214,9 +213,12 @@ internal fun DetailContent(
     }
 
     if (showSourceSheet) {
-        ModalBottomSheet(
+        // 用项目自己的 AVBoxBottomSheet（走 activity window + edge-to-edge），
+        // 而不是 Material3 ModalBottomSheet（独立 Dialog window 会画白色导航栏底，
+        // 底部系统手势区那条白底无法透明）。
+        AVBoxBottomSheet(
             onDismissRequest = { showSourceSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             SourceSection(vm, currentSourceName = displaySourceName)
             Spacer(Modifier.height(24.dp))

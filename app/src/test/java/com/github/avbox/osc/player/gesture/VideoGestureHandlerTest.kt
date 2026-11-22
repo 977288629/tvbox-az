@@ -21,6 +21,11 @@ class VideoGestureHandlerTest {
         override fun onSeekCancel() { calls += "seekCancel" }
         override fun onBrightnessSlide(totalDeltaY: Float) { calls += "brightness:$totalDeltaY" }
         override fun onVolumeSlide(totalDeltaY: Float) { calls += "volume:$totalDeltaY" }
+        override fun onZoomStart() { calls += "zoomStart" }
+        override fun onZoom(scale: Float) { calls += "zoom:$scale" }
+        override fun onZoomEnd() { calls += "zoomEnd" }
+        override fun onSwipeNext() { calls += "swipeNext" }
+        override fun onSwipePrevious() { calls += "swipePrevious" }
     }
 
     private fun session(
@@ -32,6 +37,7 @@ class VideoGestureHandlerTest {
         previewMode: Boolean = false,
         paused: Boolean = false,
         gestureEnabled: Boolean = true,
+        immersive: Boolean = false,
         verticalSlidingDisabled: Boolean = false,
         width: Int = 1000,
         height: Int = 600,
@@ -40,7 +46,7 @@ class VideoGestureHandlerTest {
         fromTopBand: Boolean = false,
     ) = VideoGestureSession(
         inPlayback, canChangePosition, enableInNormal, fullScreen, locked, previewMode,
-        paused, gestureEnabled, verticalSlidingDisabled, width, height, screenWidth, edge, fromTopBand,
+        paused, gestureEnabled, immersive, verticalSlidingDisabled, width, height, screenWidth, edge, fromTopBand,
     )
 
     @Test
